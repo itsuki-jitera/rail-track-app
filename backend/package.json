@@ -1,0 +1,19 @@
+{
+  "name": "rail-track-backend",
+  "version": "1.0.0",
+  "description": "Rail Track Restoration System Backend API",
+  "main": "src/server.js",
+  "type": "module",
+  "scripts": {
+    "start": "node src/server.js",
+    "dev": "node --watch src/server.js"
+  },
+  "keywords": ["rail", "track", "restoration"],
+  "author": "",
+  "license": "MIT",
+  "dependencies": {
+    "express": "^4.18.2",
+    "cors": "^2.8.5",
+    "multer": "^1.4.5-lts.1"
+  }
+}
