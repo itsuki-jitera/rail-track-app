@@ -540,7 +540,7 @@ app.post('/api/apply-filter', (req, res) => {
 
     res.json({
       success: true,
-      filtered,
+      data: filtered,
       filterType,
       windowSize,
       originalStats: calculateStatistics(data),
