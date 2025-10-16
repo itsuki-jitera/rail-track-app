@@ -1,0 +1,454 @@
+import React, { useState } from 'react'
+import './App.css'
+import FileUpload from './components/FileUpload'
+import ChartDisplay from './components/ChartDisplay'
+import Statistics from './components/Statistics'
+import FilterOptions from './components/FilterOptions'
+import DualRailChart from './components/DualRailChart'
+import DualRailStatistics from './components/DualRailStatistics'
+import MTTResultDisplay from './components/MTTResultDisplay'
+
+export interface TrackData {
+  distance: number
+  irregularity: number
+}
+
+export interface DataSet {
+  data: TrackData[]
+  statistics: {
+    min: number
+    max: number
+    avg: number
+    stdDev: number
+  }
+  filename?: string
+}
+
+export interface DualRailDataSet {
+  leftRail: DataSet
+  rightRail: DataSet
+  filename?: string
+}
+
+// 統計値を計算するヘルパー関数
+function calculateStatistics(data: TrackData[]) {
+  if (!data || data.length === 0) {
+    return { min: 0, max: 0, avg: 0, stdDev: 0 }
+  }
+
+  const values = data.map(d => d.irregularity)
+  const min = Math.min(...values)
+  const max = Math.max(...values)
+  const avg = values.reduce((a, b) => a + b, 0) / values.length
+
+  const variance = values.reduce((sum, val) =>
+    sum + Math.pow(val - avg, 2), 0
+  ) / values.length
+  const stdDev = Math.sqrt(variance)
+
+  return { min, max, avg, stdDev }
+}
+
+function App() {
+  // モード切り替え: 'single' = 単一レール, 'dual' = 左右レール別
+  const [railMode, setRailMode] = useState<'single' | 'dual'>('single')
+
+  // 単一レールデータ
+  const [originalData, setOriginalData] = useState<DataSet | null>(null)
+  const [restoredData, setRestoredData] = useState<DataSet | null>(null)
+
+  // 左右レール別データ
+  const [dualRailData, setDualRailData] = useState<DualRailDataSet | null>(null)
+  const [dualRailRestored, setDualRailRestored] = useState<DualRailDataSet | null>(null)
+
+  const [loading, setLoading] = useState(false)
+  const [filterType, setFilterType] = useState('moving_average_3')
+  const [showAdvanced, setShowAdvanced] = useState(false)
+  const [peaks, setPeaks] = useState<any>(null)
+  const [mttResult, setMttResult] = useState<any>(null)
+
+  // 左右レール表示切り替え
+  const [showLeft, setShowLeft] = useState(true)
+  const [showRight, setShowRight] = useState(true)
+
+  const handleFileUpload = async (file: File) => {
+    setLoading(true)
+    const formData = new FormData()
+    formData.append('file', file)
+
+    try {
+      // 左右レールモードかどうかで分岐
+      const endpoint = railMode === 'dual' ? '/api/upload-dual-rail' : '/api/upload'
+
+      const response = await fetch(endpoint, {
+        method: 'POST',
+        body: formData,
+      })
+
+      const result = await response.json()
+
+      if (result.success) {
+        if (railMode === 'dual') {
+          // 左右レール別データ
+          setDualRailData({
+            leftRail: {
+              data: result.leftRail.data,
+              statistics: result.leftRail.statistics,
+              filename: result.filename + ' (左レール)'
+            },
+            rightRail: {
+              data: result.rightRail.data,
+              statistics: result.rightRail.statistics,
+              filename: result.filename + ' (右レール)'
+            },
+            filename: result.filename
+          })
+          setDualRailRestored(null)
+        } else {
+          // 単一レールデータ
+          setOriginalData({
+            data: result.data,
+            statistics: result.statistics,
+            filename: result.filename
+          })
+          setRestoredData(null)
+        }
+        setPeaks(null)
+        setMttResult(null)
+      } else {
+        alert('エラー: ' + (result.error || '不明なエラー'))
+      }
+    } catch (error) {
+      console.error('Upload error:', error)
+      alert('アップロードエラーが発生しました')
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  const handleApplyFilter = async () => {
+    if (!originalData) return
+
+    setLoading(true)
+    try {
+      const response = await fetch('/api/apply-filter', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          data: originalData.data,
+          filterType: filterType,
+          options: {}
+        }),
+      })
+
+      const result = await response.json()
+
+      if (result.success) {
+        setRestoredData({
+          data: result.data,
+          statistics: calculateStatistics(result.data),
+          filename: `${originalData.filename} (${filterType})`
+        })
+      } else {
+        alert('エラー: ' + (result.error || '不明なエラー'))
+      }
+    } catch (error) {
+      console.error('Filter error:', error)
+      alert('フィルタ処理エラーが発生しました')
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  const handleDetectPeaks = async () => {
+    if (!originalData) return
+
+    setLoading(true)
+    try {
+      const response = await fetch('/api/detect-peaks', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          data: originalData.data,
+          options: {
+            threshold: 2.0,
+            minDistance: 5
+          }
+        }),
+      })
+
+      const result = await response.json()
+
+      if (result.success) {
+        setPeaks(result.peaks)
+        alert(`${result.summary?.totalPeaks || 0}個のピークを検出しました`)
+      } else {
+        alert('エラー: ' + (result.error || '不明なエラー'))
+      }
+    } catch (error) {
+      console.error('Peak detection error:', error)
+      alert('ピーク検出エラーが発生しました')
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  const handleCalculateMTT = async () => {
+    if (!originalData) return
+
+    setLoading(true)
+    try {
+      const response = await fetch('/api/calculate-mtt', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          data: originalData.data,
+          params: {
+            baseLength: 10.0,
+            thresholds: {
+              管理値: 7.0,
+              整備基準値: 12.0,
+              緊急整備値: 20.0
+            }
+          }
+        }),
+      })
+
+      const result = await response.json()
+
+      if (result.success) {
+        setMttResult(result)
+        alert('MTT値計算が完了しました')
+      } else {
+        alert('エラー: ' + (result.error || '不明なエラー'))
+      }
+    } catch (error) {
+      console.error('MTT calculation error:', error)
+      alert('MTT値計算エラーが発生しました')
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  const handleExportData = async (format: string) => {
+    if (!originalData) return
+
+    setLoading(true)
+    try {
+      const response = await fetch('/api/export', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          data: restoredData?.data || originalData.data,
+          format: format,
+          options: {
+            includeStatistics: true,
+            includePeaks: peaks?.totalPeaks > 0,
+            peaks: peaks
+          }
+        }),
+      })
+
+      if (format === 'json') {
+        const result = await response.json()
+        const blob = new Blob([JSON.stringify(result, null, 2)], { type: 'application/json' })
+        const url = window.URL.createObjectURL(blob)
+        const a = document.createElement('a')
+        a.href = url
+        a.download = `track_data_${Date.now()}.json`
+        a.click()
+        window.URL.revokeObjectURL(url)
+      } else {
+        const blob = await response.blob()
+        const url = window.URL.createObjectURL(blob)
+        const a = document.createElement('a')
+        a.href = url
+        a.download = `track_data_${Date.now()}.${format === 'excel' ? 'xlsx' : format}`
+        a.click()
+        window.URL.revokeObjectURL(url)
+      }
+
+      alert(`${format.toUpperCase()}形式でエクスポートしました`)
+    } catch (error) {
+      console.error('Export error:', error)
+      alert('エクスポートエラーが発生しました')
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  return (
+    <div className="App">
+      <header className="header">
+        <h1>🚄 軌道復元システム</h1>
+        <p>Rail Track Restoration System</p>
+      </header>
+
+      <div className="container">
+        <section className="upload-section">
+          <h2>データアップロード</h2>
+          <FileUpload onFileUpload={handleFileUpload} loading={loading} />
+          {originalData && (
+            <div className="info">
+              <p>✓ ファイル: <strong>{originalData.filename}</strong></p>
+              <p>✓ データ点数: <strong>{originalData.data.length}</strong> points</p>
+            </div>
+          )}
+        </section>
+
+        {originalData && (
+          <>
+            <section className="chart-section">
+              <h2>軌道波形データ</h2>
+              <ChartDisplay
+                originalData={originalData.data}
+                restoredData={restoredData?.data}
+              />
+            </section>
+
+            <section className="stats-section">
+              <h2>統計情報</h2>
+              <div className="stats-grid">
+                <Statistics
+                  title="元データ"
+                  statistics={originalData.statistics}
+                />
+                {restoredData && (
+                  <Statistics
+                    title="復元データ"
+                    statistics={restoredData.statistics}
+                  />
+                )}
+              </div>
+            </section>
+
+            <section className="filter-section">
+              <h2>フィルタ処理</h2>
+              <FilterOptions
+                filterType={filterType}
+                onFilterChange={setFilterType}
+                disabled={loading}
+              />
+              <div className="action-buttons">
+                <button
+                  className="btn btn-primary"
+                  onClick={handleApplyFilter}
+                  disabled={loading}
+                >
+                  {loading ? '処理中...' : 'フィルタを適用'}
+                </button>
+              </div>
+            </section>
+
+            <section className="advanced-section">
+              <h2>
+                高度な分析
+                <button
+                  className="btn btn-link"
+                  onClick={() => setShowAdvanced(!showAdvanced)}
+                >
+                  {showAdvanced ? '▼ 閉じる' : '▶ 開く'}
+                </button>
+              </h2>
+
+              {showAdvanced && (
+                <div className="advanced-content">
+                  <div className="analysis-grid">
+                    <div className="analysis-card">
+                      <h3>ピーク検出</h3>
+                      <p>軌道狂いのピーク箇所を検出します</p>
+                      <button
+                        className="btn btn-secondary"
+                        onClick={handleDetectPeaks}
+                        disabled={loading}
+                      >
+                        ピークを検出
+                      </button>
+                      {peaks.totalPeaks > 0 && (
+                        <div className="result-info">
+                          検出数: <strong>{peaks.totalPeaks}</strong>箇所
+                        </div>
+                      )}
+                    </div>
+
+                    <div className="analysis-card">
+                      <h3>MTT値計算</h3>
+                      <p>軌道の総合評価指標を計算します</p>
+                      <button
+                        className="btn btn-secondary"
+                        onClick={handleCalculateMTT}
+                        disabled={loading}
+                      >
+                        MTT値を計算
+                      </button>
+                      {mttResult && (
+                        <div className="result-info">
+                          MTT: <strong>{mttResult.mtt?.toFixed(2)}</strong> mm
+                          <br />
+                          評価: <strong>{mttResult.evaluation?.level}</strong>
+                        </div>
+                      )}
+                    </div>
+
+                    <div className="analysis-card">
+                      <h3>データエクスポート</h3>
+                      <p>処理結果をファイルに出力します</p>
+                      <div className="export-buttons">
+                        <button
+                          className="btn btn-secondary"
+                          onClick={() => handleExportData('excel')}
+                          disabled={loading}
+                        >
+                          Excel出力
+                        </button>
+                        <button
+                          className="btn btn-secondary"
+                          onClick={() => handleExportData('csv')}
+                          disabled={loading}
+                        >
+                          CSV出力
+                        </button>
+                        <button
+                          className="btn btn-secondary"
+                          onClick={() => handleExportData('json')}
+                          disabled={loading}
+                        >
+                          JSON出力
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              )}
+            </section>
+          </>
+        )}
+
+        {!originalData && (
+          <div className="empty-state">
+            <p>📊 CSVファイルをアップロードしてください</p>
+            <p className="note">
+              フォーマット: 距離(m), 軌道狂い量(mm)<br />
+              例: 0.0, 2.5
+            </p>
+          </div>
+        )}
+      </div>
+
+      <footer className="footer">
+        <p>Based on Rail Track Restoration System (VB6 legacy)</p>
+        <p>API: Express.js | Frontend: React + TypeScript</p>
+      </footer>
+    </div>
+  )
+}
+
+export default App

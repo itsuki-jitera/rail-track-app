@@ -13,6 +13,8 @@ const FileUpload: React.FC<FileUploadProps> = ({ onFileUpload, loading }) => {
     const file = e.target.files?.[0]
     if (file) {
       onFileUpload(file)
+      // ファイル選択後に入力値をリセット（同じファイルの再選択を可能に）
+      e.target.value = ''
     }
   }
 
@@ -34,7 +36,11 @@ const FileUpload: React.FC<FileUploadProps> = ({ onFileUpload, loading }) => {
   }
 
   const handleClick = () => {
-    fileInputRef.current?.click()
+    // ファイルインプットをクリック前にリセット
+    if (fileInputRef.current) {
+      fileInputRef.current.value = ''
+      fileInputRef.current.click()
+    }
   }
 
   return (

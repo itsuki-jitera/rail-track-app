@@ -1,0 +1,18 @@
+{
+  "data": [
+    {"distance": 0, "irregularity": 5.2},
+    {"distance": 0.5, "irregularity": 8.1},
+    {"distance": 1.0, "irregularity": 15.3},
+    {"distance": 1.5, "irregularity": 9.8},
+    {"distance": 2.0, "irregularity": 6.5},
+    {"distance": 2.5, "irregularity": 3.3},
+    {"distance": 3.0, "irregularity": 7.1},
+    {"distance": 3.5, "irregularity": 18.5},
+    {"distance": 4.0, "irregularity": 8.2},
+    {"distance": 4.5, "irregularity": 4.1}
+  ],
+  "options": {
+    "minHeight": 10.0,
+    "minDistance": 0.5
+  }
+}

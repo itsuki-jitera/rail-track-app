@@ -1,0 +1,12 @@
+{
+  "data": [
+    {"distance": 0, "irregularity": 5.2},
+    {"distance": 0.5, "irregularity": 8.1},
+    {"distance": 1.0, "irregularity": 12.3},
+    {"distance": 1.5, "irregularity": 9.8},
+    {"distance": 2.0, "irregularity": 6.5},
+    {"distance": 2.5, "irregularity": 7.3},
+    {"distance": 3.0, "irregularity": 10.1}
+  ],
+  "filterType": "moving_average_5"
+}

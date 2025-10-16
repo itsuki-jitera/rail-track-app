@@ -1,0 +1,293 @@
+.outlier-detection {
+  background: white;
+  border-radius: 8px;
+  padding: 1.5rem;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  margin-bottom: 1.5rem;
+}
+
+.outlier-detection h3 {
+  margin-top: 0;
+  margin-bottom: 1.5rem;
+  color: #333;
+  font-size: 1.3rem;
+  padding-bottom: 1rem;
+  border-bottom: 2px solid #e0e0e0;
+}
+
+.outlier-content {
+  animation: fadeIn 0.3s ease-in;
+}
+
+/* 検出設定 */
+.detection-settings {
+  background: #f8f9fa;
+  padding: 1.5rem;
+  border-radius: 8px;
+  margin-bottom: 1.5rem;
+}
+
+.sigma-control {
+  margin-bottom: 1.5rem;
+}
+
+.sigma-control label {
+  display: block;
+  margin-bottom: 0.75rem;
+  font-weight: 600;
+  color: #333;
+  font-size: 0.95rem;
+}
+
+.sigma-control strong {
+  color: #2196f3;
+  font-size: 1.1rem;
+}
+
+.sigma-control input[type='range'] {
+  width: 100%;
+  height: 8px;
+  border-radius: 4px;
+  background: #e0e0e0;
+  outline: none;
+  -webkit-appearance: none;
+  margin-bottom: 0.5rem;
+}
+
+.sigma-control input[type='range']::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  background: #2196f3;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+.sigma-control input[type='range']::-webkit-slider-thumb:hover {
+  background: #1976d2;
+}
+
+.sigma-control input[type='range']::-moz-range-thumb {
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  background: #2196f3;
+  cursor: pointer;
+  border: none;
+  transition: background 0.2s;
+}
+
+.sigma-control input[type='range']::-moz-range-thumb:hover {
+  background: #1976d2;
+}
+
+.sigma-range-labels {
+  display: flex;
+  justify-content: space-between;
+  font-size: 0.8rem;
+  color: #666;
+}
+
+.detection-settings .btn {
+  width: 100%;
+}
+
+/* エラーメッセージ */
+.error-message {
+  background: #ffebee;
+  color: #c62828;
+  padding: 1rem;
+  border-radius: 4px;
+  margin-bottom: 1rem;
+  border-left: 4px solid #c62828;
+}
+
+/* 検出結果 */
+.outlier-results {
+  animation: slideIn 0.3s ease-out;
+}
+
+.outlier-summary {
+  background: #e3f2fd;
+  padding: 1.5rem;
+  border-radius: 8px;
+  margin-bottom: 1.5rem;
+  border-left: 4px solid #2196f3;
+}
+
+.outlier-summary h4 {
+  margin-top: 0;
+  margin-bottom: 1rem;
+  color: #333;
+  font-size: 1.1rem;
+}
+
+.summary-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  gap: 1rem;
+}
+
+.summary-item {
+  display: flex;
+  flex-direction: column;
+  padding: 0.75rem;
+  background: white;
+  border-radius: 4px;
+}
+
+.summary-label {
+  font-size: 0.85rem;
+  color: #666;
+  margin-bottom: 0.25rem;
+  font-weight: 500;
+}
+
+.summary-value {
+  font-size: 1.5rem;
+  color: #1976d2;
+  font-weight: 700;
+}
+
+/* 異常値テーブル */
+.outlier-table-container {
+  margin-bottom: 1rem;
+}
+
+.outlier-table-container h4 {
+  margin-bottom: 1rem;
+  color: #333;
+  font-size: 1.1rem;
+}
+
+.table-wrapper {
+  overflow-x: auto;
+  border-radius: 8px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+}
+
+.outlier-table {
+  width: 100%;
+  border-collapse: collapse;
+  background: white;
+}
+
+.outlier-table thead {
+  background: #d32f2f;
+  color: white;
+}
+
+.outlier-table th {
+  padding: 1rem;
+  text-align: left;
+  font-weight: 600;
+  font-size: 0.9rem;
+}
+
+.outlier-table td {
+  padding: 0.875rem 1rem;
+  border-bottom: 1px solid #e0e0e0;
+  color: #333;
+}
+
+.outlier-table tbody tr:hover {
+  background: #f5f5f5;
+}
+
+.outlier-table tbody tr:last-child td {
+  border-bottom: none;
+}
+
+/* バッジ */
+.deviation-badge {
+  display: inline-block;
+  padding: 0.25rem 0.75rem;
+  border-radius: 12px;
+  color: white;
+  font-weight: 600;
+  font-size: 0.85rem;
+}
+
+.type-badge {
+  display: inline-block;
+  padding: 0.25rem 0.75rem;
+  border-radius: 12px;
+  font-weight: 600;
+  font-size: 0.85rem;
+}
+
+.type-badge.type-high {
+  background: #ffebee;
+  color: #c62828;
+}
+
+.type-badge.type-low {
+  background: #e3f2fd;
+  color: #1565c0;
+}
+
+/* 異常値なしメッセージ */
+.no-outliers {
+  text-align: center;
+  padding: 3rem 2rem;
+  background: #f1f8e9;
+  border-radius: 8px;
+  border: 2px dashed #7cb342;
+}
+
+.no-outliers p {
+  margin: 0.5rem 0;
+  color: #33691e;
+  font-size: 1rem;
+}
+
+.no-outliers .suggestion {
+  font-size: 0.9rem;
+  color: #558b2f;
+  margin-top: 1rem;
+}
+
+/* アニメーション */
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes slideIn {
+  from {
+    opacity: 0;
+    transform: translateX(-20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+/* レスポンシブ対応 */
+@media (max-width: 768px) {
+  .outlier-detection {
+    padding: 1rem;
+  }
+
+  .summary-grid {
+    grid-template-columns: 1fr 1fr;
+  }
+
+  .outlier-table {
+    font-size: 0.85rem;
+  }
+
+  .outlier-table th,
+  .outlier-table td {
+    padding: 0.5rem;
+  }
+}
