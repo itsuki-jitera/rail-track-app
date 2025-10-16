@@ -38,6 +38,46 @@ function parseCSV(csvText) {
   return data;
 }
 
+// Helper function: Parse Dual Rail CSV data
+function parseDualRailCSV(csvText) {
+  // Remove BOM if present
+  let text = csvText;
+  if (text.charCodeAt(0) === 0xFEFF) {
+    text = text.slice(1);
+  }
+
+  const lines = text.split('\n').filter(line => line.trim());
+  const leftRail = [];
+  const rightRail = [];
+  let isFirstLine = true;
+
+  for (const line of lines) {
+    // Skip header row if it exists (first line with non-numeric values)
+    if (isFirstLine) {
+      const values = line.split(',').map(v => v.trim());
+      if (isNaN(parseFloat(values[0]))) {
+        isFirstLine = false;
+        continue;
+      }
+      isFirstLine = false;
+    }
+
+    const values = line.split(',').map(v => v.trim());
+    if (values.length >= 3) {
+      const distance = parseFloat(values[0]);
+      const leftIrregularity = parseFloat(values[1]);
+      const rightIrregularity = parseFloat(values[2]);
+
+      if (!isNaN(distance) && !isNaN(leftIrregularity) && !isNaN(rightIrregularity)) {
+        leftRail.push({ distance, irregularity: leftIrregularity });
+        rightRail.push({ distance, irregularity: rightIrregularity });
+      }
+    }
+  }
+
+  return { leftRail, rightRail };
+}
+
 // Helper function: Calculate correlation coefficient (相関係数)
 function calculateCorrelation(data1, data2) {
   const n = Math.min(data1.length, data2.length);
@@ -308,49 +348,43 @@ app.post('/api/upload', upload.single('file'), async (req, res) => {
   }
 });
 
-// Upload dual rail CSV files
-app.post('/api/upload-dual-rail', upload.fields([
-  { name: 'leftFile', maxCount: 1 },
-  { name: 'rightFile', maxCount: 1 }
-]), async (req, res) => {
+// Upload dual rail CSV file (single file with 3 columns: distance, left, right)
+app.post('/api/upload-dual-rail', upload.single('file'), async (req, res) => {
   try {
-    if (!req.files || !req.files.leftFile || !req.files.rightFile) {
-      return res.status(400).json({ error: '左右両方のファイルが必要です' });
+    if (!req.file) {
+      return res.status(400).json({ error: 'ファイルがアップロードされていません' });
     }
 
-    const leftCSV = req.files.leftFile[0].buffer.toString('utf-8');
-    const rightCSV = req.files.rightFile[0].buffer.toString('utf-8');
+    const csvText = req.file.buffer.toString('utf-8');
+    const { leftRail, rightRail } = parseDualRailCSV(csvText);
 
-    const leftData = parseCSV(leftCSV);
-    const rightData = parseCSV(rightCSV);
-
-    if (leftData.length === 0 || rightData.length === 0) {
-      return res.status(400).json({ error: '有効なデータが見つかりませんでした' });
+    if (leftRail.length === 0 || rightRail.length === 0) {
+      return res.status(400).json({ error: '有効な左右レールデータが見つかりませんでした' });
     }
 
-    const leftStats = calculateStatistics(leftData);
-    const rightStats = calculateStatistics(rightData);
-    const correlation = calculateCorrelation(leftData, rightData);
+    const leftStats = calculateStatistics(leftRail);
+    const rightStats = calculateStatistics(rightRail);
 
     res.json({
       success: true,
-      left: {
-        filename: req.files.leftFile[0].originalname,
-        dataPoints: leftData.length,
-        data: leftData,
+      filename: req.file.originalname,
+      dataPoints: {
+        left: leftRail.length,
+        right: rightRail.length,
+        total: leftRail.length + rightRail.length
+      },
+      leftRail: {
+        data: leftRail,
         statistics: leftStats
       },
-      right: {
-        filename: req.files.rightFile[0].originalname,
-        dataPoints: rightData.length,
-        data: rightData,
+      rightRail: {
+        data: rightRail,
         statistics: rightStats
-      },
-      correlation
+      }
     });
 
   } catch (error) {
-    console.error('Error processing dual rail files:', error);
+    console.error('Error processing dual rail file:', error);
     res.status(500).json({ error: 'ファイル処理中にエラーが発生しました: ' + error.message });
   }
 });
