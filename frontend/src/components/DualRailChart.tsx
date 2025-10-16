@@ -30,6 +30,8 @@ interface TrackData {
 interface DualRailChartProps {
   leftRail: TrackData[]
   rightRail: TrackData[]
+  leftRailRestored?: TrackData[]
+  rightRailRestored?: TrackData[]
   showLeft?: boolean
   showRight?: boolean
   peaks?: {
@@ -41,6 +43,8 @@ interface DualRailChartProps {
 const DualRailChart: React.FC<DualRailChartProps> = ({
   leftRail,
   rightRail,
+  leftRailRestored,
+  rightRailRestored,
   showLeft = true,
   showRight = true,
   peaks
@@ -50,10 +54,10 @@ const DualRailChart: React.FC<DualRailChartProps> = ({
 
   const datasets = []
 
-  // 左レールデータ
+  // 左レール元データ
   if (showLeft && leftRail.length > 0) {
     datasets.push({
-      label: '左レール (Left Rail)',
+      label: '左レール元データ (Left Rail Original)',
       data: leftRail.map(d => d.irregularity),
       borderColor: 'rgb(54, 162, 235)',
       backgroundColor: 'rgba(54, 162, 235, 0.5)',
@@ -63,16 +67,44 @@ const DualRailChart: React.FC<DualRailChartProps> = ({
     })
   }
 
-  // 右レールデータ
+  // 左レール復元データ
+  if (showLeft && leftRailRestored && leftRailRestored.length > 0) {
+    datasets.push({
+      label: '左レール復元データ (Left Rail Restored)',
+      data: leftRailRestored.map(d => d.irregularity),
+      borderColor: 'rgb(75, 192, 192)',
+      backgroundColor: 'rgba(75, 192, 192, 0.5)',
+      tension: 0.1,
+      pointRadius: 2,
+      pointHoverRadius: 5,
+      borderDash: [5, 5],
+    })
+  }
+
+  // 右レール元データ
   if (showRight && rightRail.length > 0) {
     datasets.push({
-      label: '右レール (Right Rail)',
+      label: '右レール元データ (Right Rail Original)',
       data: rightRail.map(d => d.irregularity),
       borderColor: 'rgb(255, 99, 132)',
       backgroundColor: 'rgba(255, 99, 132, 0.5)',
       tension: 0.1,
       pointRadius: 2,
       pointHoverRadius: 5,
+    })
+  }
+
+  // 右レール復元データ
+  if (showRight && rightRailRestored && rightRailRestored.length > 0) {
+    datasets.push({
+      label: '右レール復元データ (Right Rail Restored)',
+      data: rightRailRestored.map(d => d.irregularity),
+      borderColor: 'rgb(255, 159, 64)',
+      backgroundColor: 'rgba(255, 159, 64, 0.5)',
+      tension: 0.1,
+      pointRadius: 2,
+      pointHoverRadius: 5,
+      borderDash: [5, 5],
     })
   }
 

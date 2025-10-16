@@ -174,16 +174,28 @@ function App() {
         const leftResult = await leftResponse.json()
         const rightResult = await rightResponse.json()
 
+        console.log('Left filter result:', leftResult)
+        console.log('Right filter result:', rightResult)
+
         if (leftResult.success && rightResult.success) {
+          console.log('Left data length:', leftResult.data?.length)
+          console.log('Right data length:', rightResult.data?.length)
+
+          const leftStats = calculateStatistics(leftResult.data)
+          const rightStats = calculateStatistics(rightResult.data)
+
+          console.log('Left stats:', leftStats)
+          console.log('Right stats:', rightStats)
+
           setDualRailRestored({
             leftRail: {
               data: leftResult.data,
-              statistics: calculateStatistics(leftResult.data),
+              statistics: leftStats,
               filename: `${dualRailData.filename} (左レール - ${filterType})`
             },
             rightRail: {
               data: rightResult.data,
-              statistics: calculateStatistics(rightResult.data),
+              statistics: rightStats,
               filename: `${dualRailData.filename} (右レール - ${filterType})`
             },
             filename: dualRailData.filename
@@ -550,8 +562,10 @@ function App() {
                 <section className="chart-section">
                   <h2>📊 左右レール別軌道波形データ</h2>
                   <DualRailChart
-                    leftRail={dualRailRestored?.leftRail.data || dualRailData.leftRail.data}
-                    rightRail={dualRailRestored?.rightRail.data || dualRailData.rightRail.data}
+                    leftRail={dualRailData.leftRail.data}
+                    rightRail={dualRailData.rightRail.data}
+                    leftRailRestored={dualRailRestored?.leftRail.data}
+                    rightRailRestored={dualRailRestored?.rightRail.data}
                     showLeft={showLeft}
                     showRight={showRight}
                     peaks={peaks}
@@ -560,11 +574,28 @@ function App() {
 
                 <section className="stats-section">
                   <h2>📈 統計情報</h2>
-                  <DualRailStatistics
-                    leftRail={dualRailRestored?.leftRail.statistics || dualRailData.leftRail.statistics}
-                    rightRail={dualRailRestored?.rightRail.statistics || dualRailData.rightRail.statistics}
-                    showComparison={true}
-                  />
+
+                  {/* 元データの統計 */}
+                  <div className="stats-group">
+                    <h3>元データ (Original)</h3>
+                    <DualRailStatistics
+                      leftRail={dualRailData.leftRail.statistics}
+                      rightRail={dualRailData.rightRail.statistics}
+                      showComparison={true}
+                    />
+                  </div>
+
+                  {/* 復元データの統計 */}
+                  {dualRailRestored && (
+                    <div className="stats-group">
+                      <h3>復元データ (Restored)</h3>
+                      <DualRailStatistics
+                        leftRail={dualRailRestored.leftRail.statistics}
+                        rightRail={dualRailRestored.rightRail.statistics}
+                        showComparison={true}
+                      />
+                    </div>
+                  )}
                 </section>
               </>
             )}
