@@ -165,7 +165,7 @@ const DualRailChart: React.FC<DualRailChartProps> = ({
         <Line data={data} options={options} />
       </div>
 
-      {peaks && (peaks.leftPeaks?.length > 0 || peaks.rightPeaks?.length > 0) && (
+      {peaks && ((peaks.leftPeaks && peaks.leftPeaks.length > 0) || (peaks.rightPeaks && peaks.rightPeaks.length > 0)) && (
         <div className="peak-info">
           {peaks.leftPeaks && peaks.leftPeaks.length > 0 && (
             <div className="peak-count left">

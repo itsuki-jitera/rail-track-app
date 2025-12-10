@@ -14,6 +14,21 @@ import { applyAllCorrectionsToDataset, addCantSlackToDataset } from './algorithm
 import { exportToExcel, exportToCSV, exportToJSON } from './exporters/excelExporter.js';
 import { generateSineWaveData, generatePeakyData, generateRealisticTrackData } from './utils/mockData.js';
 
+// キヤデータ処理機能
+import { detectEncoding, convertToUTF8, smartDecode } from './utils/encoding-detector.js';
+import { parseCK } from './parsers/ck-parser.js';
+import { parseLK } from './parsers/lk-parser.js';
+
+// 旧ラボデータ処理機能
+import { parseMDTFile, isValidMDTFile } from './parsers/mdt-parser.js';
+import { parseO010CSV, convertToStandardFormat as convertO010ToStandard, isValidO010CSV } from './parsers/o010-parser.js';
+
+// 復元波形計算機能
+import RestorationWaveformCalculator from './calculators/restoration-waveform.js';
+
+// 復元波形ルート（ES6形式からCommonJS形式への変更が必要）
+// import restorationRoutes from './routes/restoration-routes.js';
+
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
@@ -38,10 +53,13 @@ const storage = multer.diskStorage({
 const upload = multer({
   storage: storage,
   fileFilter: (req, file, cb) => {
-    if (file.mimetype === 'text/csv' || file.originalname.endsWith('.csv')) {
+    const isCSV = file.mimetype === 'text/csv' || file.originalname.endsWith('.csv') || file.originalname.endsWith('.CSV');
+    const isMDT = file.originalname.endsWith('.MDT') || file.originalname.endsWith('.mdt');
+
+    if (isCSV || isMDT) {
       cb(null, true);
     } else {
-      cb(new Error('CSVファイルのみアップロード可能です'));
+      cb(new Error('CSV または MDT ファイルのみアップロード可能です'));
     }
   }
 });
@@ -546,6 +564,343 @@ app.post('/api/calculate-dual-mtt', (req, res) => {
   }
 });
 
+// ========== キヤデータ処理エンドポイント ==========
+
+// CKファイル（曲線情報）解析エンドポイント
+app.post('/api/parse-ck', upload.single('file'), async (req, res) => {
+  try {
+    if (!req.file) {
+      return res.status(400).json({ error: 'ファイルがアップロードされていません' });
+    }
+
+    const filePath = req.file.path;
+    const buffer = await fs.readFile(filePath);
+
+    // エンコーディング自動検出と変換
+    const decoded = smartDecode(buffer);
+
+    if (!decoded.success) {
+      console.warn('文字コード検出に失敗。UTF-8として処理します。');
+    }
+
+    // CKファイルをパース
+    const result = parseCK(decoded.text);
+
+    res.json({
+      success: true,
+      filename: req.file.originalname,
+      encoding: decoded.encoding,
+      curves: result.curves,
+      structures: result.structures,
+      stations: result.stations,
+      metadata: result.metadata,
+      counts: {
+        curves: result.curves.length,
+        structures: result.structures.length,
+        stations: result.stations.length
+      }
+    });
+
+    // Clean up uploaded file
+    await fs.unlink(filePath);
+
+  } catch (error) {
+    console.error('Error parsing CK file:', error);
+    res.status(500).json({ error: 'CKファイル解析中にエラーが発生しました: ' + error.message });
+  }
+});
+
+// LKファイル（線区管理）解析エンドポイント
+app.post('/api/parse-lk', upload.single('file'), async (req, res) => {
+  try {
+    if (!req.file) {
+      return res.status(400).json({ error: 'ファイルがアップロードされていません' });
+    }
+
+    const filePath = req.file.path;
+    const buffer = await fs.readFile(filePath);
+
+    // エンコーディング自動検出と変換
+    const decoded = smartDecode(buffer);
+
+    if (!decoded.success) {
+      console.warn('文字コード検出に失敗。UTF-8として処理します。');
+    }
+
+    // LKファイルをパース
+    const result = parseLK(decoded.text);
+
+    res.json({
+      success: true,
+      filename: req.file.originalname,
+      encoding: decoded.encoding,
+      sections: result.sections,
+      managementValues: result.managementValues,
+      managementSections: result.managementSections,
+      counts: {
+        sections: result.sections.length,
+        managementValues: result.managementValues.length,
+        managementSections: result.managementSections.length
+      }
+    });
+
+    // Clean up uploaded file
+    await fs.unlink(filePath);
+
+  } catch (error) {
+    console.error('Error parsing LK file:', error);
+    res.status(500).json({ error: 'LKファイル解析中にエラーが発生しました: ' + error.message });
+  }
+});
+
+// 汎用的なキヤデータアップロード（自動判別）
+app.post('/api/upload-kiya', upload.single('file'), async (req, res) => {
+  try {
+    if (!req.file) {
+      return res.status(400).json({ error: 'ファイルがアップロードされていません' });
+    }
+
+    const filePath = req.file.path;
+    const buffer = await fs.readFile(filePath);
+    const filename = req.file.originalname;
+
+    // エンコーディング自動検出と変換
+    const decoded = smartDecode(buffer);
+
+    // ファイル名でCK/LKを判別
+    const isCK = filename.includes('CK') || filename.startsWith('CK');
+    const isLK = filename.includes('LK') || filename.startsWith('LK');
+
+    let result;
+    let fileType;
+
+    if (isCK) {
+      result = parseCK(decoded.text);
+      fileType = 'CK';
+    } else if (isLK) {
+      result = parseLK(decoded.text);
+      fileType = 'LK';
+    } else {
+      // ファイル名で判別できない場合は内容から判断
+      const hasLKMarker = decoded.text.includes('LK');
+      const hasBCMarker = decoded.text.includes('BC=');
+
+      if (hasBCMarker) {
+        result = parseCK(decoded.text);
+        fileType = 'CK';
+      } else if (hasLKMarker) {
+        result = parseLK(decoded.text);
+        fileType = 'LK';
+      } else {
+        return res.status(400).json({ error: 'CKまたはLKファイル形式として認識できませんでした' });
+      }
+    }
+
+    res.json({
+      success: true,
+      filename: filename,
+      fileType: fileType,
+      encoding: decoded.encoding,
+      data: result
+    });
+
+    // Clean up uploaded file
+    await fs.unlink(filePath);
+
+  } catch (error) {
+    console.error('Error uploading kiya file:', error);
+    res.status(500).json({ error: 'キヤデータアップロード中にエラーが発生しました: ' + error.message });
+  }
+});
+
+// ========== 旧ラボデータ処理エンドポイント ==========
+
+// MDTファイル解析エンドポイント
+app.post('/api/parse-mdt', upload.single('file'), async (req, res) => {
+  try {
+    if (!req.file) {
+      return res.status(400).json({ error: 'ファイルがアップロードされていません' });
+    }
+
+    const filePath = req.file.path;
+    const buffer = await fs.readFile(filePath);
+
+    // MDTファイルを解析
+    const result = parseMDTFile(buffer);
+
+    if (!result.success) {
+      return res.status(400).json({ error: result.error });
+    }
+
+    res.json({
+      success: true,
+      filename: req.file.originalname,
+      mdtData: result.data
+    });
+
+    // Clean up uploaded file
+    await fs.unlink(filePath);
+
+  } catch (error) {
+    console.error('Error parsing MDT file:', error);
+    res.status(500).json({ error: 'MDTファイル解析中にエラーが発生しました: ' + error.message });
+  }
+});
+
+// O010*.csv解析エンドポイント
+app.post('/api/parse-o010', upload.single('file'), async (req, res) => {
+  try {
+    if (!req.file) {
+      return res.status(400).json({ error: 'ファイルがアップロードされていません' });
+    }
+
+    const filePath = req.file.path;
+    const buffer = await fs.readFile(filePath);
+
+    // O010*.csvを解析
+    const result = parseO010CSV(buffer);
+
+    if (!result.success) {
+      return res.status(400).json({ error: result.error });
+    }
+
+    // 標準フォーマットにも変換
+    const standardData = convertO010ToStandard(result);
+
+    res.json({
+      success: true,
+      filename: req.file.originalname,
+      o010Data: result.data,
+      multiMeasurementData: standardData,
+      totalRecords: result.data.totalRecords
+    });
+
+    // Clean up uploaded file
+    await fs.unlink(filePath);
+
+  } catch (error) {
+    console.error('Error parsing O010 file:', error);
+    res.status(500).json({ error: 'O010ファイル解析中にエラーが発生しました: ' + error.message });
+  }
+});
+
+// 旧ラボデータ統合アップロード（MDT + O010）
+app.post('/api/upload-legacy-data', upload.fields([
+  { name: 'mdt', maxCount: 1 },
+  { name: 'o010', maxCount: 1 }
+]), async (req, res) => {
+  try {
+    const mdtFile = req.files?.mdt?.[0];
+    const o010File = req.files?.o010?.[0];
+
+    if (!mdtFile && !o010File) {
+      return res.status(400).json({ error: 'MDTまたはO010ファイルが必要です' });
+    }
+
+    const response = {
+      success: true,
+      mdtData: null,
+      o010Data: null,
+      multiMeasurementData: null
+    };
+
+    // MDTファイルの処理
+    if (mdtFile) {
+      const mdtBuffer = await fs.readFile(mdtFile.path);
+      const mdtResult = parseMDTFile(mdtBuffer);
+
+      if (mdtResult.success) {
+        response.mdtData = mdtResult.data;
+      } else {
+        console.warn('MDT parsing warning:', mdtResult.error);
+      }
+
+      await fs.unlink(mdtFile.path);
+    }
+
+    // O010ファイルの処理
+    if (o010File) {
+      const o010Buffer = await fs.readFile(o010File.path);
+      const o010Result = parseO010CSV(o010Buffer);
+
+      if (o010Result.success) {
+        response.o010Data = o010Result.data;
+        response.multiMeasurementData = convertO010ToStandard(o010Result);
+      } else {
+        console.warn('O010 parsing warning:', o010Result.error);
+      }
+
+      await fs.unlink(o010File.path);
+    }
+
+    res.json(response);
+
+  } catch (error) {
+    console.error('Error uploading legacy data:', error);
+    res.status(500).json({ error: '旧ラボデータアップロード中にエラーが発生しました: ' + error.message });
+  }
+});
+
+// ========== 復元波形ルートの登録 ==========
+// CommonJSモジュールの動的インポート
+import { createRequire } from 'module';
+const require = createRequire(import.meta.url);
+try {
+  const restorationRoutes = require('./routes/restoration-routes.js');
+  app.use('/api/restoration', restorationRoutes);
+  console.log('Restoration routes loaded successfully');
+} catch (error) {
+  console.error('Failed to load restoration routes:', error);
+}
+
+// ========== 復元波形計算エンドポイント ==========
+
+// 復元波形計算エンドポイント
+app.post('/api/calculate-restoration-waveform', async (req, res) => {
+  try {
+    const { measurementData, options } = req.body;
+
+    // 測定データ形式: [{ distance: 0.0, value: 2.5 }, ...]
+    if (!measurementData || !Array.isArray(measurementData)) {
+      return res.status(400).json({
+        success: false,
+        error: '測定データが必要です（形式: [{ distance, value }]）'
+      });
+    }
+
+    if (measurementData.length === 0) {
+      return res.status(400).json({
+        success: false,
+        error: '測定データが空です'
+      });
+    }
+
+    console.log(`復元波形計算開始: ${measurementData.length}点のデータ`);
+
+    // 計算器を初期化
+    const calculator = new RestorationWaveformCalculator(options);
+
+    // 計算実行
+    const result = calculator.calculate(measurementData);
+
+    if (!result.success) {
+      return res.status(500).json(result);
+    }
+
+    console.log('復元波形計算完了');
+
+    res.json(result);
+
+  } catch (error) {
+    console.error('Restoration waveform calculation error:', error);
+    res.status(500).json({
+      success: false,
+      error: error.message,
+      stack: error.stack
+    });
+  }
+});
+
 // モックデータ生成エンドポイント（テスト用）
 app.get('/api/generate-mock-data', (req, res) => {
   try {
@@ -605,5 +960,11 @@ app.listen(PORT, () => {
   console.log('  - 左右レール別MTT値計算: POST /api/calculate-dual-mtt');
   console.log('  - 補正処理: POST /api/apply-corrections');
   console.log('  - データエクスポート: POST /api/export');
+  console.log('  - キヤデータ（CK）解析: POST /api/parse-ck');
+  console.log('  - キヤデータ（LK）解析: POST /api/parse-lk');
+  console.log('  - キヤデータ汎用アップロード: POST /api/upload-kiya');
+  console.log('  - 旧ラボデータ（MDT）解析: POST /api/parse-mdt');
+  console.log('  - 旧ラボデータ（O010）解析: POST /api/parse-o010');
+  console.log('  - 旧ラボデータ統合アップロード: POST /api/upload-legacy-data');
   console.log('  - モックデータ生成: GET /api/generate-mock-data');
 });

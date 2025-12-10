@@ -1,0 +1,111 @@
+{
+  "timestamp": "2025-11-29T01:43:53.115Z",
+  "testConfiguration": {
+    "p": 10,
+    "q": 5,
+    "samplingInterval": 0.25,
+    "testCases": [
+      "1,000点 (250m)",
+      "10,000点 (2.5km)",
+      "50,000点 (12.5km)",
+      "100,000点 (25km)",
+      "500,000点 (125km)"
+    ]
+  },
+  "results": [
+    {
+      "dataPoints": 1000,
+      "label": "1,000点 (250m)",
+      "original": {
+        "time": 2.6124,
+        "memory": 0.45
+      },
+      "optimized": {
+        "time": 1.1673,
+        "memory": -0.62
+      },
+      "speedup": 2.24,
+      "improvement": 55.3,
+      "recommendedMethod": "normal"
+    },
+    {
+      "dataPoints": 10000,
+      "label": "10,000点 (2.5km)",
+      "original": {
+        "time": 5.8229,
+        "memory": 0.78
+      },
+      "optimized": {
+        "time": 5.8394,
+        "memory": 1.76
+      },
+      "speedup": 1,
+      "improvement": -0.3,
+      "recommendedMethod": "chunked"
+    },
+    {
+      "dataPoints": 50000,
+      "label": "50,000点 (12.5km)",
+      "original": {
+        "time": 26.5937,
+        "memory": 8.72
+      },
+      "optimized": {
+        "time": 25.8066,
+        "memory": 6.56
+      },
+      "speedup": 1.03,
+      "improvement": 3,
+      "recommendedMethod": "chunked"
+    },
+    {
+      "dataPoints": 100000,
+      "label": "100,000点 (25km)",
+      "original": {
+        "time": 28.5478,
+        "memory": 5.16
+      },
+      "optimized": {
+        "time": 34.7592,
+        "memory": 8.36
+      },
+      "speedup": 0.82,
+      "improvement": -21.8,
+      "recommendedMethod": "streaming"
+    },
+    {
+      "dataPoints": 500000,
+      "label": "500,000点 (125km)",
+      "original": {
+        "time": 129.3961,
+        "memory": 64.02
+      },
+      "optimized": {
+        "time": 119.861,
+        "memory": 40.38
+      },
+      "speedup": 1.08,
+      "improvement": 7.4,
+      "recommendedMethod": "streaming"
+    }
+  ],
+  "summary": {
+    "averageSpeedup": 1.23,
+    "averageImprovement": 8.7,
+    "bestCase": {
+      "dataset": "1,000点 (250m)",
+      "improvement": 55.3,
+      "speedup": 2.24
+    }
+  },
+  "recommendations": [
+    {
+      "type": "threshold",
+      "message": "Use optimized version for datasets >= 1000 points"
+    },
+    {
+      "type": "streaming",
+      "message": "Consider streaming processing for datasets >= 100,000 points"
+    }
+  ]
+}

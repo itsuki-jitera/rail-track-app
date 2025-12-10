@@ -27,5 +27,11 @@ Thumbs.db
 backend/uploads/*.csv
 backend/uploads/*.txt
 !backend/uploads/.gitkeep
+
+# Windows reserved names
+**/nul
+**/con
+**/prn
+**/aux
 # Local Netlify folder
 .netlify

@@ -1,0 +1,532 @@
+/* 偏心矢計算ページスタイル */
+
+.eccentric-versine-page {
+  padding: 20px;
+  max-width: 1600px;
+  margin: 0 auto;
+  background-color: #f5f7fa;
+  min-height: 100vh;
+}
+
+.page-header {
+  margin-bottom: 30px;
+  padding-bottom: 20px;
+  border-bottom: 2px solid #e1e8ed;
+}
+
+.page-header h1 {
+  margin: 0 0 10px 0;
+  font-size: 32px;
+  color: #2c3e50;
+}
+
+.page-description {
+  margin: 0;
+  color: #7f8c8d;
+  font-size: 14px;
+}
+
+/* タブナビゲーション */
+.tab-navigation {
+  display: flex;
+  border-bottom: 2px solid #e1e8ed;
+  background-color: #f8f9fa;
+  border-radius: 8px 8px 0 0;
+  overflow-x: auto;
+}
+
+.tab {
+  padding: 15px 25px;
+  border: none;
+  background: none;
+  cursor: pointer;
+  font-size: 14px;
+  font-weight: 500;
+  color: #7f8c8d;
+  transition: all 0.2s;
+  border-bottom: 3px solid transparent;
+  margin-bottom: -2px;
+  white-space: nowrap;
+}
+
+.tab:hover {
+  color: #3498db;
+  background-color: #ecf0f1;
+}
+
+.tab.active {
+  color: #3498db;
+  border-bottom-color: #3498db;
+  background-color: white;
+}
+
+/* タブコンテンツ */
+.tab-content {
+  background: white;
+  border-radius: 0 0 8px 8px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  padding: 30px;
+  min-height: 600px;
+}
+
+/* セクション */
+.section {
+  margin-bottom: 30px;
+}
+
+.section h2 {
+  margin: 0 0 20px 0;
+  font-size: 24px;
+  color: #2c3e50;
+  padding-bottom: 10px;
+  border-bottom: 2px solid #e1e8ed;
+}
+
+.section h3 {
+  margin: 25px 0 15px 0;
+  font-size: 18px;
+  color: #34495e;
+}
+
+.section h4 {
+  margin: 15px 0 10px 0;
+  font-size: 16px;
+  color: #34495e;
+}
+
+/* パラメータセクション */
+.parameter-section {
+  margin-bottom: 30px;
+  padding: 20px;
+  background-color: #f8f9fa;
+  border-radius: 8px;
+  border: 1px solid #e1e8ed;
+}
+
+.param-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+  gap: 15px;
+  margin-bottom: 20px;
+}
+
+.param-item {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+
+.param-item label {
+  font-weight: 600;
+  color: #34495e;
+  font-size: 13px;
+}
+
+.param-item input {
+  padding: 10px;
+  border: 1px solid #e1e8ed;
+  border-radius: 4px;
+  font-size: 14px;
+}
+
+.param-item input:focus {
+  outline: none;
+  border-color: #3498db;
+  box-shadow: 0 0 0 3px rgba(52, 152, 219, 0.1);
+}
+
+/* 変換パラメータ */
+.conversion-params {
+  display: grid;
+  gap: 20px;
+}
+
+.param-group {
+  padding: 15px;
+  background-color: white;
+  border-radius: 6px;
+  border: 1px solid #e1e8ed;
+}
+
+.param-group h4 {
+  margin-top: 0;
+  color: #3498db;
+}
+
+/* 数式表示 */
+.formula-display {
+  padding: 15px;
+  background-color: #e8f4f8;
+  border-left: 4px solid #3498db;
+  border-radius: 4px;
+  margin-bottom: 15px;
+  font-family: 'Courier New', monospace;
+  font-size: 13px;
+  line-height: 1.8;
+}
+
+.formula-display strong {
+  color: #2c3e50;
+}
+
+/* データセクション */
+.data-section {
+  margin-bottom: 30px;
+  padding: 20px;
+  background-color: #f8f9fa;
+  border-radius: 8px;
+}
+
+.data-info {
+  margin-top: 15px;
+  padding: 15px;
+  background-color: #e8f4f8;
+  border-radius: 6px;
+}
+
+.data-info p {
+  margin: 5px 0;
+  color: #2c3e50;
+  font-size: 14px;
+}
+
+/* ボタングループ */
+.button-group {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.btn {
+  padding: 10px 20px;
+  border: none;
+  border-radius: 6px;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.btn-primary {
+  background-color: #3498db;
+  color: white;
+}
+
+.btn-primary:hover:not(:disabled) {
+  background-color: #2980b9;
+  box-shadow: 0 4px 8px rgba(52, 152, 219, 0.3);
+}
+
+/* 結果セクション */
+.result-section {
+  margin-top: 30px;
+  padding: 25px;
+  background-color: #f8f9fa;
+  border-radius: 8px;
+  border: 2px solid #3498db;
+}
+
+.result-section h3 {
+  margin-top: 0;
+  color: #3498db;
+}
+
+/* チャートセクション */
+.chart-section {
+  margin: 25px 0;
+  padding: 20px;
+  background-color: white;
+  border-radius: 6px;
+  border: 1px solid #e1e8ed;
+}
+
+/* 情報グリッド */
+.info-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  gap: 15px;
+  margin-bottom: 20px;
+}
+
+.info-item {
+  display: flex;
+  align-items: center;
+  padding: 12px;
+  background-color: white;
+  border-radius: 6px;
+}
+
+.info-item label {
+  font-weight: 600;
+  color: #7f8c8d;
+  margin-right: 10px;
+  min-width: 120px;
+}
+
+.info-item span {
+  color: #2c3e50;
+}
+
+/* 統計グリッド */
+.stats-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 15px;
+  margin-bottom: 25px;
+}
+
+.stat-card {
+  padding: 20px;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  border-radius: 8px;
+  color: white;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+}
+
+.stat-card h4 {
+  margin: 0 0 10px 0;
+  font-size: 13px;
+  opacity: 0.9;
+  color: white;
+}
+
+.stat-value {
+  margin: 0;
+  font-size: 28px;
+  font-weight: 700;
+}
+
+.stat-unit {
+  margin: 5px 0 0 0;
+  font-size: 12px;
+  opacity: 0.8;
+}
+
+/* 検測特性プレビュー */
+.characteristics-preview {
+  margin-top: 25px;
+}
+
+.characteristics-preview h4 {
+  margin-bottom: 15px;
+}
+
+/* データテーブル */
+.table-scroll {
+  overflow-x: auto;
+  border-radius: 6px;
+  border: 1px solid #e1e8ed;
+  margin-bottom: 10px;
+}
+
+.data-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13px;
+}
+
+.data-table thead {
+  background-color: #34495e;
+  color: white;
+}
+
+.data-table th {
+  padding: 12px 15px;
+  text-align: left;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.data-table tbody tr {
+  border-bottom: 1px solid #e1e8ed;
+}
+
+.data-table tbody tr:hover {
+  background-color: #f8f9fa;
+}
+
+.data-table td {
+  padding: 10px 15px;
+  color: #2c3e50;
+}
+
+.table-note {
+  margin: 10px 0 0 0;
+  padding: 10px;
+  background-color: #e8f4f8;
+  border-radius: 4px;
+  font-size: 12px;
+  color: #3498db;
+  text-align: center;
+}
+
+/* 係数結果表示 */
+.coefficient-results {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 20px;
+  margin-bottom: 25px;
+}
+
+.coeff-card {
+  padding: 25px;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  border-radius: 8px;
+  color: white;
+  text-align: center;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+}
+
+.coeff-card h4 {
+  margin: 0 0 15px 0;
+  font-size: 14px;
+  opacity: 0.9;
+  color: white;
+}
+
+.coeff-value {
+  margin: 0;
+  font-size: 32px;
+  font-weight: 700;
+  font-family: 'Courier New', monospace;
+}
+
+.coeff-detail {
+  margin: 10px 0 0 0;
+  font-size: 14px;
+  opacity: 0.8;
+}
+
+/* アルゴリズム情報 */
+.spec-section {
+  margin-bottom: 25px;
+  padding: 20px;
+  background-color: white;
+  border-radius: 6px;
+  border: 1px solid #e1e8ed;
+}
+
+.spec-section h3 {
+  margin-top: 0;
+}
+
+.spec-section ul {
+  margin: 0;
+  padding-left: 25px;
+}
+
+.spec-section li {
+  margin: 8px 0;
+  color: #2c3e50;
+}
+
+.formula-section {
+  margin-bottom: 25px;
+  padding: 20px;
+  background-color: white;
+  border-radius: 6px;
+  border: 1px solid #e1e8ed;
+}
+
+.formula-section h3 {
+  margin-top: 0;
+}
+
+.formula-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.formula-item {
+  display: flex;
+  align-items: center;
+  padding: 12px;
+  background-color: #f8f9fa;
+  border-radius: 4px;
+}
+
+.formula-item label {
+  font-weight: 600;
+  color: #34495e;
+  min-width: 120px;
+  margin-right: 15px;
+}
+
+.formula-item code {
+  flex: 1;
+  padding: 8px 12px;
+  background-color: #e8f4f8;
+  border-radius: 4px;
+  font-family: 'Courier New', monospace;
+  font-size: 13px;
+  color: #2c3e50;
+}
+
+.param-section {
+  margin-bottom: 25px;
+  padding: 20px;
+  background-color: white;
+  border-radius: 6px;
+  border: 1px solid #e1e8ed;
+}
+
+.param-section h3 {
+  margin-top: 0;
+}
+
+/* レスポンシブ対応 */
+@media (max-width: 1200px) {
+  .stats-grid {
+    grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  }
+}
+
+@media (max-width: 768px) {
+  .eccentric-versine-page {
+    padding: 10px;
+  }
+
+  .page-header h1 {
+    font-size: 24px;
+  }
+
+  .tab {
+    padding: 10px 15px;
+    font-size: 12px;
+  }
+
+  .tab-content {
+    padding: 15px;
+  }
+
+  .param-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .info-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .stats-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  .coefficient-results {
+    grid-template-columns: 1fr;
+  }
+
+  .formula-item {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .formula-item label {
+    margin-bottom: 8px;
+  }
+}

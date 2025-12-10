@@ -1,0 +1,171 @@
+{
+  "timestamp": "2025-11-28T13:58:03.985Z",
+  "summary": {
+    "totalBenchmarks": 15,
+    "totalExecutionTime": "642.31 ms",
+    "averageExecutionTime": "42.82 ms",
+    "minExecutionTime": "0.03 ms",
+    "maxExecutionTime": "325.24 ms",
+    "slowestOperation": "偏心矢計算 (1,000,000点 (250km))",
+    "fastestOperation": "偏心矢変換 (1,000点 (250m))"
+  },
+  "results": [
+    {
+      "name": "偏心矢計算 (100点 (25m))",
+      "executionTime": "0.72 ms",
+      "memoryUsed": {
+        "heapUsed": "0.05 MB",
+        "external": "0.00 MB",
+        "rss": "0.15 MB"
+      },
+      "timestamp": "2025-11-28T13:58:03.088Z"
+    },
+    {
+      "name": "偏心矢計算 (1,000点 (250m))",
+      "executionTime": "0.67 ms",
+      "memoryUsed": {
+        "heapUsed": "0.44 MB",
+        "external": "0.01 MB",
+        "rss": "0.44 MB"
+      },
+      "timestamp": "2025-11-28T13:58:03.089Z"
+    },
+    {
+      "name": "偏心矢計算 (10,000点 (2.5km))",
+      "executionTime": "5.97 ms",
+      "memoryUsed": {
+        "heapUsed": "3.22 MB",
+        "external": "0.08 MB",
+        "rss": "3.36 MB"
+      },
+      "timestamp": "2025-11-28T13:58:03.098Z"
+    },
+    {
+      "name": "偏心矢計算 (100,000点 (25km))",
+      "executionTime": "54.53 ms",
+      "memoryUsed": {
+        "heapUsed": "11.17 MB",
+        "external": "0.32 MB",
+        "rss": "28.32 MB"
+      },
+      "timestamp": "2025-11-28T13:58:03.167Z"
+    },
+    {
+      "name": "偏心矢計算 (1,000,000点 (250km))",
+      "executionTime": "325.24 ms",
+      "memoryUsed": {
+        "heapUsed": "124.61 MB",
+        "external": "3.43 MB",
+        "rss": "127.84 MB"
+      },
+      "timestamp": "2025-11-28T13:58:03.664Z"
+    },
+    {
+      "name": "検測特性計算 (50点 (1-50m))",
+      "executionTime": "0.16 ms",
+      "memoryUsed": {
+        "heapUsed": "0.05 MB",
+        "external": "0.00 MB",
+        "rss": "0.00 MB"
+      },
+      "timestamp": "2025-11-28T13:58:03.665Z"
+    },
+    {
+      "name": "検測特性計算 (100点 (1-100m))",
+      "executionTime": "0.14 ms",
+      "memoryUsed": {
+        "heapUsed": "0.10 MB",
+        "external": "0.00 MB",
+        "rss": "0.00 MB"
+      },
+      "timestamp": "2025-11-28T13:58:03.665Z"
+    },
+    {
+      "name": "検測特性計算 (200点 (1-200m))",
+      "executionTime": "0.25 ms",
+      "memoryUsed": {
+        "heapUsed": "0.20 MB",
+        "external": "0.00 MB",
+        "rss": "0.00 MB"
+      },
+      "timestamp": "2025-11-28T13:58:03.665Z"
+    },
+    {
+      "name": "検測特性計算 (400点 (1-200m, 0.5m刻み))",
+      "executionTime": "0.48 ms",
+      "memoryUsed": {
+        "heapUsed": "0.40 MB",
+        "external": "0.00 MB",
+        "rss": "0.00 MB"
+      },
+      "timestamp": "2025-11-28T13:58:03.666Z"
+    },
+    {
+      "name": "偏心矢変換 (100点 (25m))",
+      "executionTime": "0.11 ms",
+      "memoryUsed": {
+        "heapUsed": "0.01 MB",
+        "external": "0.00 MB",
+        "rss": "0.00 MB"
+      },
+      "timestamp": "2025-11-28T13:58:03.666Z"
+    },
+    {
+      "name": "偏心矢変換 (1,000点 (250m))",
+      "executionTime": "0.03 ms",
+      "memoryUsed": {
+        "heapUsed": "0.03 MB",
+        "external": "0.00 MB",
+        "rss": "0.00 MB"
+      },
+      "timestamp": "2025-11-28T13:58:03.666Z"
+    },
+    {
+      "name": "偏心矢変換 (10,000点 (2.5km))",
+      "executionTime": "0.30 ms",
+      "memoryUsed": {
+        "heapUsed": "0.31 MB",
+        "external": "0.04 MB",
+        "rss": "0.02 MB"
+      },
+      "timestamp": "2025-11-28T13:58:03.668Z"
+    },
+    {
+      "name": "偏心矢変換 (100,000点 (25km))",
+      "executionTime": "0.21 ms",
+      "memoryUsed": {
+        "heapUsed": "0.00 MB",
+        "external": "0.38 MB",
+        "rss": "0.09 MB"
+      },
+      "timestamp": "2025-11-28T13:58:03.683Z"
+    },
+    {
+      "name": "一括特性計算 (3設定 × 200波長)",
+      "executionTime": "0.85 ms",
+      "memoryUsed": {
+        "heapUsed": "0.57 MB",
+        "external": "0.00 MB",
+        "rss": "0.00 MB"
+      },
+      "timestamp": "2025-11-28T13:58:03.684Z"
+    },
+    {
+      "name": "大規模データセット処理 (500,000点)",
+      "executionTime": "252.65 ms",
+      "memoryUsed": {
+        "heapUsed": "-111.97 MB",
+        "external": "-2.75 MB",
+        "rss": "-120.14 MB"
+      },
+      "timestamp": "2025-11-28T13:58:03.983Z"
+    }
+  ],
+  "recommendations": [
+    {
+      "type": "memory",
+      "priority": "medium",
+      "message": "Optimize memory usage for large calculations"
+    }
+  ]
+}

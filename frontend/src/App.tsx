@@ -1,5 +1,6 @@
-import React, { useState } from 'react'
+import { useState } from 'react'
 import './App.css'
+import Sidebar from './components/Sidebar'
 import FileUpload from './components/FileUpload'
 import ChartDisplay from './components/ChartDisplay'
 import Statistics from './components/Statistics'
@@ -10,7 +11,32 @@ import MTTResultDisplay from './components/MTTResultDisplay'
 import SpectrumAnalysis from './components/SpectrumAnalysis'
 import CorrectionSettings from './components/CorrectionSettings'
 import OutlierDetection from './components/OutlierDetection'
-import FFTFilterSettings from './components/FFTFilterSettings'
+import KiyaDataPage from './pages/KiyaDataPage'
+import LegacyDataPage from './pages/LegacyDataPage'
+import DataImportPage from './pages/DataImportPage'
+import FileConversionPage from './pages/FileConversionPage'
+import AlgorithmAnalysisPage from './pages/AlgorithmAnalysisPage'
+import { RestorationWorkspacePage } from './pages/RestorationWorkspacePage'
+import { CurveSpecManagementPage } from './pages/CurveSpecManagementPage'
+import BatchProcessingPage from './pages/BatchProcessingPage'
+import TrackEnvironmentPage from './pages/TrackEnvironmentPage'
+import EccentricVersinePage from './pages/EccentricVersinePage'
+import { WorkSectionPage } from './pages/WorkSectionPage'
+import { MTTSettingsPage } from './pages/MTTSettingsPage'
+import { FixedPointPage } from './pages/FixedPointPage'
+import { MovementLimitPage } from './pages/MovementLimitPage'
+import { BeforeAfterPage } from './pages/BeforeAfterPage'
+import { PlanLinePage } from './pages/PlanLinePage'
+import { VerticalCurvePage } from './pages/VerticalCurvePage'
+import { FieldMeasurementPage } from './pages/FieldMeasurementPage'
+import { MovementCalcPage } from './pages/MovementCalcPage'
+import { WavebandAnalysisPage } from './pages/WavebandAnalysisPage'
+import { QualityAnalysisPage } from './pages/QualityAnalysisPage'
+import { ExportALSPage } from './pages/ExportALSPage'
+import { ExportMJPage } from './pages/ExportMJPage'
+import { ExportALCPage } from './pages/ExportALCPage'
+import { ExportGeneralPage } from './pages/ExportGeneralPage'
+import { ReportPage } from './pages/ReportPage'
 
 export interface TrackData {
   distance: number
@@ -54,6 +80,12 @@ function calculateStatistics(data: TrackData[]) {
 }
 
 function App() {
+  // ページ切り替え
+  const [currentPage, setCurrentPage] = useState<string>('analysis')
+
+  // サイドバーの開閉状態
+  const [sidebarOpen, setSidebarOpen] = useState(false)
+
   // モード切り替え: 'single' = 単一レール, 'dual' = 左右レール別
   const [railMode, setRailMode] = useState<'single' | 'dual'>('single')
 
@@ -78,12 +110,6 @@ function App() {
   // 新機能のState
   const [outliers, setOutliers] = useState<any>(null)
   const [advancedTab, setAdvancedTab] = useState<string>('peaks') // peaks, spectrum, correction, outliers
-  const [fftSettings, setFftSettings] = useState({
-    filterType: 'fft_lowpass' as 'fft_lowpass' | 'fft_highpass' | 'fft_bandpass',
-    cutoffFreq: 0.1,
-    lowCutoff: 0.05,
-    highCutoff: 0.2,
-  })
 
   // データがあるかチェック
   const hasData = (railMode === 'single' && originalData) || (railMode === 'dual' && dualRailData)
@@ -436,11 +462,148 @@ function App() {
 
   return (
     <div className="App">
-      <header className="header">
-        <h1>🚄 軌道復元システム</h1>
-        <p>Rail Track Restoration System</p>
-      </header>
+      {/* サイドバー */}
+      <Sidebar
+        activeTab={currentPage}
+        onTabChange={setCurrentPage}
+        isOpen={sidebarOpen}
+        onToggle={() => setSidebarOpen(!sidebarOpen)}
+      />
 
+      {/* メインコンテンツエリア */}
+      <div className="app-with-sidebar">
+      {/* データインポートページ */}
+      {currentPage === 'import' && (
+        <DataImportPage />
+      )}
+
+      {/* ファイル形式変換ページ */}
+      {currentPage === 'conversion' && (
+        <FileConversionPage />
+      )}
+
+      {/* アルゴリズム解析ページ */}
+      {currentPage === 'algorithm' && (
+        <AlgorithmAnalysisPage />
+      )}
+
+      {/* 復元整正ワークスペースページ */}
+      {currentPage === 'restoration' && (
+        <RestorationWorkspacePage />
+      )}
+
+      {/* 曲線諸元管理ページ */}
+      {currentPage === 'curve-spec' && (
+        <CurveSpecManagementPage />
+      )}
+
+      {/* バッチ処理ページ */}
+      {currentPage === 'batch' && (
+        <BatchProcessingPage />
+      )}
+
+      {/* キヤデータページ */}
+      {currentPage === 'kiya-import' && (
+        <KiyaDataPage />
+      )}
+
+      {/* 軌道環境データページ */}
+      {currentPage === 'environment' && (
+        <TrackEnvironmentPage />
+      )}
+
+      {/* 偏心矢計算ページ */}
+      {currentPage === 'eccentric' && (
+        <EccentricVersinePage />
+      )}
+
+      {/* 旧ラボデータページ */}
+      {currentPage === 'legacy' && (
+        <LegacyDataPage />
+      )}
+
+      {/* 作業区間設定ページ */}
+      {currentPage === 'work-section' && (
+        <WorkSectionPage />
+      )}
+
+      {/* MTT設定ページ */}
+      {currentPage === 'mtt-settings' && (
+        <MTTSettingsPage />
+      )}
+
+      {/* 固定点設定ページ */}
+      {currentPage === 'fixed-point' && (
+        <FixedPointPage />
+      )}
+
+      {/* 移動量制限ページ */}
+      {currentPage === 'movement-limit' && (
+        <MovementLimitPage />
+      )}
+
+      {/* 整備前後比較ページ */}
+      {currentPage === 'before-after' && (
+        <BeforeAfterPage />
+      )}
+
+      {/* 計画線設定ページ */}
+      {currentPage === 'plan-line' && (
+        <PlanLinePage />
+      )}
+
+      {/* 縦曲線設定ページ */}
+      {currentPage === 'vertical-curve' && (
+        <VerticalCurvePage />
+      )}
+
+      {/* 手検測入力ページ */}
+      {currentPage === 'field-measurement' && (
+        <FieldMeasurementPage />
+      )}
+
+      {/* 移動量算出ページ */}
+      {currentPage === 'movement-calc' && (
+        <MovementCalcPage />
+      )}
+
+      {/* FFT解析ページ */}
+      {currentPage === 'waveband-analysis' && (
+        <WavebandAnalysisPage />
+      )}
+
+      {/* σ値・良化率解析ページ */}
+      {currentPage === 'quality-analysis' && (
+        <QualityAnalysisPage />
+      )}
+
+      {/* ALS出力ページ */}
+      {currentPage === 'export-als' && (
+        <ExportALSPage />
+      )}
+
+      {/* MJ出力ページ */}
+      {currentPage === 'export-mj' && (
+        <ExportMJPage />
+      )}
+
+      {/* ALC出力ページ */}
+      {currentPage === 'export-alc' && (
+        <ExportALCPage />
+      )}
+
+      {/* 汎用出力ページ */}
+      {currentPage === 'export-general' && (
+        <ExportGeneralPage />
+      )}
+
+      {/* 成果表作成ページ */}
+      {currentPage === 'report' && (
+        <ReportPage />
+      )}
+
+      {/* メインページ（軌道データ解析） */}
+      {currentPage === 'analysis' && (
       <div className="container">
         {/* モード切り替えセクション */}
         <section className="mode-selector">
@@ -609,13 +772,6 @@ function App() {
                 disabled={loading}
               />
 
-              {/* FFTフィルタが選択されている場合、詳細設定を表示 */}
-              {(filterType === 'fft_lowpass' || filterType === 'fft_highpass' || filterType === 'fft_bandpass') && (
-                <FFTFilterSettings
-                  onSettingsChange={setFftSettings}
-                  disabled={loading}
-                />
-              )}
 
               <div className="action-buttons">
                 <button
@@ -713,7 +869,7 @@ function App() {
                   {advancedTab === 'outliers' && (
                     <div className="tab-content">
                       <OutlierDetection
-                        data={railMode === 'single' ? originalData.data : dualRailData.leftRail.data}
+                        data={railMode === 'single' ? originalData?.data || [] : dualRailData?.leftRail.data || []}
                         onOutliersDetected={setOutliers}
                       />
                     </div>
@@ -722,7 +878,7 @@ function App() {
                   {advancedTab === 'spectrum' && (
                     <div className="tab-content">
                       <SpectrumAnalysis
-                        data={railMode === 'single' ? originalData.data : dualRailData.leftRail.data}
+                        data={railMode === 'single' ? originalData?.data || [] : dualRailData?.leftRail.data || []}
                       />
                     </div>
                   )}
@@ -730,7 +886,7 @@ function App() {
                   {advancedTab === 'correction' && (
                     <div className="tab-content">
                       <CorrectionSettings
-                        data={railMode === 'single' ? originalData.data : dualRailData.leftRail.data}
+                        data={railMode === 'single' ? originalData?.data || [] : dualRailData?.leftRail.data || []}
                       />
                     </div>
                   )}
@@ -851,12 +1007,14 @@ function App() {
           </div>
         )}
       </div>
+      )}
 
-      <footer className="footer">
-        <p>🚄 Based on Rail Track Restoration System (VB6 legacy)</p>
-        <p>API: Express.js | Frontend: React + TypeScript | 左右レール別対応版</p>
-        <p style={{ fontSize: '0.85rem', marginTop: '0.5rem', color: '#999' }}>v2.0 - Dual Rail Mode Enabled</p>
-      </footer>
+        <footer className="footer">
+          <p>🚄 Based on Rail Track Restoration System (VB6 legacy)</p>
+          <p>API: Express.js | Frontend: React + TypeScript | 左右レール別対応版</p>
+          <p style={{ fontSize: '0.85rem', marginTop: '0.5rem', color: '#999' }}>v2.1 - Kiya Data Analysis Enabled</p>
+        </footer>
+      </div>
     </div>
   )
 }

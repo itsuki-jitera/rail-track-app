@@ -1,22 +1,21 @@
 [build]
-  base = "frontend"
-  publish = "dist"
-  command = "npm run build"
+  base = "/"
+  publish = "frontend/dist"
+  command = "cd frontend && npm install && npm run build"
 
-[functions]
-  directory = "../netlify/functions"
-  node_bundler = "esbuild"
-
-[[plugins]]
-  package = "@netlify/plugin-functions-install-core"
+[build.environment]
+  NODE_VERSION = "18"
 
 [[redirects]]
   from = "/api/*"
-  to = "/.netlify/functions/api/:splat"
+  to = "/.netlify/functions/:splat"
   status = 200
-  force = true
 
 [[redirects]]
   from = "/*"
   to = "/index.html"
   status = 200
+
+[functions]
+  directory = "netlify/functions"
+  node_bundler = "esbuild"
