@@ -248,7 +248,7 @@ export const PlanLinePage: React.FC = () => {
   };
 
   return (
-    <div className="page-container">
+    <div className="page-container" style={{ position: 'relative', overflow: 'auto', height: '100vh' }}>
       <div className="page-header">
         <h1>📈 計画線設定</h1>
         <p>軌道整正の目標となる計画線を設定します（PDF P17-20準拠）</p>
@@ -262,12 +262,49 @@ export const PlanLinePage: React.FC = () => {
         />
       </div>
 
-      {/* 既存の設定セクション（折りたたみ可能） */}
-      <details style={{ marginTop: '40px' }}>
-        <summary style={{ cursor: 'pointer', padding: '10px', background: '#f3f4f6', borderRadius: '8px' }}>
+      {/* 既存の設定セクション（折りたたみ可能） - 固定位置フローティングボタン */}
+      <details style={{
+        position: 'fixed',
+        bottom: '20px',
+        right: '20px',
+        width: 'auto',
+        maxWidth: '90vw',
+        zIndex: 1000,
+        background: 'white',
+        boxShadow: '0 4px 12px rgba(0,0,0,0.15)',
+        borderRadius: '12px',
+        border: '1px solid #e2e8f0'
+      }}>
+        <summary style={{
+          cursor: 'pointer',
+          padding: '14px 24px',
+          background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+          color: 'white',
+          borderRadius: '12px',
+          fontWeight: 'bold',
+          fontSize: '15px',
+          textAlign: 'center',
+          transition: 'all 0.3s',
+          boxShadow: '0 2px 8px rgba(102, 126, 234, 0.4)'
+        }}
+        onMouseEnter={(e) => {
+          e.currentTarget.style.transform = 'translateY(-2px)';
+          e.currentTarget.style.boxShadow = '0 4px 12px rgba(102, 126, 234, 0.6)';
+        }}
+        onMouseLeave={(e) => {
+          e.currentTarget.style.transform = 'translateY(0)';
+          e.currentTarget.style.boxShadow = '0 2px 8px rgba(102, 126, 234, 0.4)';
+        }}>
           📋 詳細設定（オプション）
         </summary>
-      <div className="content-grid" style={{ marginTop: '20px' }}>
+      <div className="content-grid" style={{
+        marginTop: '20px',
+        maxHeight: '70vh',
+        overflowY: 'auto',
+        padding: '20px',
+        background: 'white',
+        borderRadius: '0 0 12px 12px'
+      }}>
         {/* 編集パネル（統合型エディタ使用時は非表示） */}
         {editMode && editingPoint && (
           <div className="card" style={{ background: '#fffbf0', border: '2px solid #ffa500' }}>
