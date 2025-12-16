@@ -1,0 +1,387 @@
+/* CurveElementEditor.css */
+
+.curve-element-editor {
+  background: #f8f9fa;
+  border-radius: 8px;
+  padding: 24px;
+  margin: 20px 0;
+}
+
+/* エディターヘッダー */
+.editor-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 24px;
+  padding-bottom: 16px;
+  border-bottom: 2px solid #e0e0e0;
+}
+
+.editor-header h3 {
+  margin: 0;
+  color: #333;
+  font-size: 1.5rem;
+}
+
+.header-controls {
+  display: flex;
+  gap: 20px;
+  align-items: center;
+}
+
+.toggle-control {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  cursor: pointer;
+  font-size: 0.95rem;
+  color: #555;
+}
+
+.toggle-control input[type="checkbox"] {
+  width: 18px;
+  height: 18px;
+  cursor: pointer;
+}
+
+.chord-indicator {
+  padding: 6px 12px;
+  background: #2196f3;
+  color: white;
+  border-radius: 4px;
+  font-weight: 500;
+  font-size: 0.9rem;
+}
+
+/* 入力セクション */
+.input-section {
+  background: white;
+  border-radius: 6px;
+  padding: 20px;
+  margin-bottom: 24px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.input-section h4 {
+  margin: 0 0 16px 0;
+  color: #555;
+  font-size: 1.1rem;
+}
+
+.input-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  gap: 16px;
+  margin-bottom: 20px;
+}
+
+.input-group {
+  display: flex;
+  flex-direction: column;
+}
+
+.input-group label {
+  font-size: 0.9rem;
+  color: #666;
+  margin-bottom: 4px;
+  font-weight: 500;
+}
+
+.input-group input,
+.input-group select {
+  padding: 8px 12px;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  font-size: 1rem;
+  transition: border-color 0.2s;
+}
+
+.input-group input:focus,
+.input-group select:focus {
+  outline: none;
+  border-color: #2196f3;
+  box-shadow: 0 0 0 2px rgba(33, 150, 243, 0.1);
+}
+
+.input-group input[type="number"] {
+  -moz-appearance: textfield;
+}
+
+.input-group input[type="number"]::-webkit-inner-spin-button,
+.input-group input[type="number"]::-webkit-outer-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+
+.error {
+  color: #f44336;
+  font-size: 0.85rem;
+  margin-top: 4px;
+}
+
+.error-message {
+  color: #f44336;
+  padding: 8px 12px;
+  background: #ffebee;
+  border-radius: 4px;
+  margin-bottom: 16px;
+  border-left: 3px solid #f44336;
+}
+
+.btn-add {
+  padding: 10px 24px;
+  background: #4caf50;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  font-size: 1rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+.btn-add:hover {
+  background: #45a049;
+}
+
+/* チャートセクション */
+.chart-section {
+  background: white;
+  border-radius: 6px;
+  padding: 20px;
+  margin-bottom: 24px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.chart-container {
+  padding: 16px;
+}
+
+/* 曲線要素リスト */
+.elements-list {
+  background: white;
+  border-radius: 6px;
+  padding: 20px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.elements-list h4 {
+  margin: 0 0 16px 0;
+  color: #555;
+  font-size: 1.1rem;
+}
+
+.no-elements {
+  text-align: center;
+  padding: 40px;
+  color: #999;
+  font-style: italic;
+}
+
+.element-items {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+/* 曲線要素アイテム */
+.element-item {
+  padding: 16px;
+  border: 1px solid #e0e0e0;
+  border-radius: 6px;
+  background: white;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.element-item:hover {
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  border-color: #2196f3;
+}
+
+.element-item.selected {
+  background: #e3f2fd;
+  border-color: #2196f3;
+  border-width: 2px;
+}
+
+.element-info {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.km-range {
+  font-weight: 600;
+  color: #333;
+  font-size: 1.05rem;
+}
+
+.element-details {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  align-items: center;
+}
+
+.element-details span {
+  padding: 4px 8px;
+  border-radius: 4px;
+  font-size: 0.9rem;
+}
+
+.radius {
+  background: #e0e0e0;
+  color: #333;
+}
+
+.direction {
+  font-weight: 500;
+}
+
+.direction.right {
+  background: #fff3e0;
+  color: #f57c00;
+}
+
+.direction.left {
+  background: #e3f2fd;
+  color: #1976d2;
+}
+
+.versine {
+  background: #f3e5f5;
+  color: #7b1fa2;
+}
+
+.type {
+  background: #e8f5e9;
+  color: #2e7d32;
+  font-weight: 500;
+}
+
+.cant {
+  background: #fce4ec;
+  color: #c2185b;
+}
+
+/* 要素アクション */
+.element-actions {
+  margin-top: 12px;
+  padding-top: 12px;
+  border-top: 1px solid #e0e0e0;
+  display: flex;
+  gap: 8px;
+}
+
+.btn-edit,
+.btn-delete {
+  padding: 6px 16px;
+  border: 1px solid #ddd;
+  background: white;
+  border-radius: 4px;
+  font-size: 0.9rem;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.btn-edit:hover {
+  background: #2196f3;
+  color: white;
+  border-color: #2196f3;
+}
+
+.btn-delete:hover {
+  background: #f44336;
+  color: white;
+  border-color: #f44336;
+}
+
+/* 台形視覚化の色分け */
+.trapezoid-positive {
+  background: rgba(255, 152, 0, 0.1);
+  border-color: #ff9800;
+}
+
+.trapezoid-negative {
+  background: rgba(33, 150, 243, 0.1);
+  border-color: #2196f3;
+}
+
+/* レスポンシブ対応 */
+@media (max-width: 1024px) {
+  .input-grid {
+    grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+  }
+}
+
+@media (max-width: 768px) {
+  .editor-header {
+    flex-direction: column;
+    gap: 16px;
+    align-items: flex-start;
+  }
+
+  .header-controls {
+    width: 100%;
+    justify-content: space-between;
+  }
+
+  .input-grid {
+    grid-template-columns: 1fr 1fr;
+  }
+
+  .element-details {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .element-details span {
+    display: inline-block;
+  }
+}
+
+@media (max-width: 480px) {
+  .input-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .header-controls {
+    flex-direction: column;
+    gap: 8px;
+    align-items: flex-start;
+  }
+}
+
+/* アニメーション */
+@keyframes slideIn {
+  from {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.element-item {
+  animation: slideIn 0.3s ease-out;
+}
+
+/* 印刷対応 */
+@media print {
+  .header-controls,
+  .input-section,
+  .element-actions {
+    display: none;
+  }
+
+  .element-item {
+    page-break-inside: avoid;
+  }
+
+  .chart-section {
+    page-break-before: always;
+  }
+}

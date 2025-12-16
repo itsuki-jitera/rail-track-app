@@ -1,0 +1,335 @@
+/* EnhancedPlanLineEditor.css */
+
+.enhanced-plan-line-editor {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  padding: 20px;
+  background: #f5f6fa;
+  min-height: 100vh;
+}
+
+/* ヘッダー */
+.editor-header {
+  background: white;
+  padding: 20px;
+  border-radius: 8px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.editor-header h2 {
+  margin: 0;
+  color: #333;
+  font-size: 24px;
+}
+
+.data-type-info {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+}
+
+.info-badge {
+  padding: 6px 12px;
+  background: #e3f2fd;
+  color: #1976d2;
+  border-radius: 16px;
+  font-size: 14px;
+  font-weight: 500;
+}
+
+.warning-badge {
+  padding: 6px 12px;
+  background: #fff3e0;
+  color: #f57c00;
+  border-radius: 16px;
+  font-size: 14px;
+  font-weight: 500;
+  animation: pulse 2s infinite;
+}
+
+/* 統計パネル */
+.statistics-panel {
+  background: white;
+  padding: 20px;
+  border-radius: 8px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.stat-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  gap: 16px;
+}
+
+.stat-item {
+  padding: 12px;
+  background: #f8f9fa;
+  border-radius: 6px;
+  text-align: center;
+  border: 2px solid transparent;
+  transition: all 0.2s;
+}
+
+.stat-item.good {
+  border-color: #4caf50;
+  background: #e8f5e9;
+}
+
+.stat-item.normal {
+  border-color: #2196f3;
+  background: #e3f2fd;
+}
+
+.stat-item.warning {
+  border-color: #ff9800;
+  background: #fff3e0;
+}
+
+.stat-item label {
+  display: block;
+  font-size: 12px;
+  color: #666;
+  margin-bottom: 4px;
+  font-weight: 500;
+}
+
+.stat-item .value {
+  font-size: 20px;
+  font-weight: bold;
+  color: #333;
+}
+
+.stat-item.good .value {
+  color: #2e7d32;
+}
+
+.stat-item.warning .value {
+  color: #f57c00;
+}
+
+/* グラフコンテナ */
+.chart-container {
+  background: white;
+  padding: 20px;
+  border-radius: 8px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  min-height: 400px;
+  position: relative;
+}
+
+.chart-container canvas {
+  max-height: 400px !important;
+}
+
+.no-data {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 400px;
+  color: #999;
+  font-size: 18px;
+}
+
+/* ビューコントロール */
+.view-controls {
+  background: white;
+  padding: 16px;
+  border-radius: 8px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.zoom-controls {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.zoom-controls button {
+  padding: 6px 12px;
+  background: #f5f5f5;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.zoom-controls button:hover {
+  background: #e0e0e0;
+}
+
+.zoom-controls span {
+  font-weight: 500;
+  color: #555;
+  min-width: 80px;
+  text-align: center;
+}
+
+.pan-controls {
+  flex: 1;
+  max-width: 400px;
+  margin-left: 20px;
+}
+
+.pan-controls input[type="range"] {
+  width: 100%;
+}
+
+/* 編集ツール */
+.editing-tools {
+  background: white;
+  padding: 20px;
+  border-radius: 8px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.mode-selector {
+  display: flex;
+  gap: 8px;
+}
+
+.mode-selector button {
+  padding: 8px 16px;
+  background: #f5f5f5;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.mode-selector button:hover {
+  background: #e0e0e0;
+}
+
+.mode-selector button.active {
+  background: #2196f3;
+  color: white;
+  border-color: #1976d2;
+}
+
+.action-buttons {
+  display: flex;
+  gap: 12px;
+}
+
+.action-buttons button {
+  padding: 10px 20px;
+  background: white;
+  border: 1px solid #ddd;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all 0.2s;
+  font-weight: 500;
+}
+
+.action-buttons button:hover:not(:disabled) {
+  background: #f5f5f5;
+  border-color: #bbb;
+}
+
+.save-button {
+  background: #4caf50 !important;
+  color: white !important;
+  border-color: #45a049 !important;
+  font-size: 15px;
+}
+
+.save-button:hover:not(:disabled) {
+  background: #45a049 !important;
+}
+
+.save-button:disabled {
+  background: #ccc !important;
+  border-color: #bbb !important;
+  cursor: not-allowed;
+  opacity: 0.6;
+}
+
+/* デバッグ情報 */
+.debug-info {
+  background: #263238;
+  color: #aed581;
+  padding: 12px;
+  border-radius: 8px;
+  font-family: 'Courier New', monospace;
+}
+
+.debug-info summary {
+  cursor: pointer;
+  font-weight: bold;
+  margin-bottom: 8px;
+}
+
+.debug-info pre {
+  margin: 8px 0 0 0;
+  font-size: 12px;
+  overflow-x: auto;
+}
+
+/* アニメーション */
+@keyframes pulse {
+  0% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.7;
+  }
+  100% {
+    opacity: 1;
+  }
+}
+
+/* レスポンシブ */
+@media (max-width: 768px) {
+  .editor-header {
+    flex-direction: column;
+    gap: 12px;
+  }
+
+  .stat-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  .view-controls {
+    flex-direction: column;
+    gap: 12px;
+  }
+
+  .pan-controls {
+    margin-left: 0;
+    width: 100%;
+  }
+
+  .editing-tools {
+    flex-direction: column;
+    gap: 12px;
+  }
+
+  .mode-selector,
+  .action-buttons {
+    width: 100%;
+    justify-content: center;
+  }
+}
+
+/* 印刷対応 */
+@media print {
+  .view-controls,
+  .editing-tools,
+  .debug-info {
+    display: none;
+  }
+
+  .chart-container {
+    page-break-inside: avoid;
+  }
+}

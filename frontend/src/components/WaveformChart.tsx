@@ -68,17 +68,47 @@ export const WaveformChart: React.FC<WaveformChartProps> = ({
   // チャートデータの準備
   const chartData = restoredWaveform.map((value, index) => {
     const kp = kilometerPoints ? kilometerPoints[index] : startKP + index * dataInterval;
-    const movementValue = movement ? Math.abs(movement[index]) : 0;
+    const movementValue = movement && movement[index] !== null && movement[index] !== undefined
+      ? Math.abs(movement[index])
+      : 0;
     const isStandardExceeded = movementValue > standardLimit;
     const isMaximumExceeded = movementValue > maximumLimit;
+
+    // valueがnullやundefinedの場合のチェック
+    const restoredValue = value !== null && value !== undefined
+      ? Number(value.toFixed(3))
+      : 0;
+
+    // planLine[index]が数値かオブジェクトかをチェック
+    let planLineValue = undefined;
+    if (planLine && planLine[index] !== null && planLine[index] !== undefined) {
+      const planLineItem = planLine[index];
+      // オブジェクト形式 { distance, value } の場合
+      if (typeof planLineItem === 'object' && 'value' in planLineItem) {
+        const val = planLineItem.value;
+        planLineValue = val !== null && val !== undefined ? Number(Number(val).toFixed(3)) : undefined;
+      }
+      // 数値の場合
+      else if (typeof planLineItem === 'number') {
+        planLineValue = Number(planLineItem.toFixed(3));
+      }
+      // 文字列の数値の場合
+      else if (typeof planLineItem === 'string' && !isNaN(Number(planLineItem))) {
+        planLineValue = Number(Number(planLineItem).toFixed(3));
+      }
+    }
+
+    const movementValueFormatted = movement && movement[index] !== null && movement[index] !== undefined
+      ? Number(movement[index].toFixed(3))
+      : undefined;
 
     return {
       index,
       kp: kp.toFixed(3),
       kilometerPoint: kp,
-      restoredWaveform: Number(value.toFixed(3)),
-      planLine: planLine ? Number(planLine[index]?.toFixed(3)) : undefined,
-      movement: movement ? Number(movement[index]?.toFixed(3)) : undefined,
+      restoredWaveform: restoredValue,
+      planLine: planLineValue,
+      movement: movementValueFormatted,
       isStandardExceeded,
       isMaximumExceeded
     };

@@ -15,7 +15,7 @@ export const Y1Y2Analysis: React.FC = () => {
     try {
       const formData = new FormData();
       formData.append('file', file);
-      const uploadRes = await axios.post('http://localhost:3002/api/upload', formData);
+      const uploadRes = await axios.post('http://localhost:3003/api/upload', formData);
 
       const response = await axios.post('http://localhost:5000/api/algorithms/y1y2', {
         measurementData: uploadRes.data.data,

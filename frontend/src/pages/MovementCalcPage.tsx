@@ -6,6 +6,7 @@
 
 import React, { useState } from 'react';
 import { StandardButton, PresetButtons } from '../components/StandardButton';
+import { useGlobalWorkspace, workspaceSelectors } from '../contexts/GlobalWorkspaceContext';
 import './PageStyles.css';
 
 interface MovementResult {
@@ -17,6 +18,10 @@ interface MovementResult {
 }
 
 export const MovementCalcPage: React.FC = () => {
+  // グローバル状態を使用
+  const { state } = useGlobalWorkspace();
+  const restoredWaveform = workspaceSelectors.getRestoredWaveform(state);
+  const planLine = workspaceSelectors.getPlanLine(state);
   const [calculating, setCalculating] = useState(false);
   const [results, setResults] = useState<MovementResult[]>([]);
   const [settings, setSettings] = useState({
@@ -29,18 +34,57 @@ export const MovementCalcPage: React.FC = () => {
   });
 
   const calculateMovement = async () => {
+    // データチェック
+    if (!planLine || !restoredWaveform) {
+      alert('計画線と復元波形データが必要です。前の手順を完了してください。');
+      return;
+    }
+
     setCalculating(true);
     try {
       const response = await fetch('/api/calculate-movement', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ settings })
+        body: JSON.stringify({
+          planLine,
+          restoredWaveform,
+          correctionMode: settings.targetType,
+          settings
+        })
       });
 
       const data = await response.json();
       if (data.success) {
-        setResults(data.results);
-        alert(`移動量算出完了: ${data.results.length}点`);
+        // APIからの生データを処理
+        const movements = data.data.movements;
+        const processedResults: MovementResult[] = [];
+
+        if (movements && movements.positions) {
+          for (let i = 0; i < movements.positions.length; i++) {
+            const movement = Math.abs(movements.levelMovements[i] || 0);
+
+            // 優先度判定（5mm以上が実際の整正対象）
+            let priority: 'high' | 'medium' | 'low' = 'low';
+            if (movement >= 10) priority = 'high';
+            else if (movement >= 5) priority = 'medium';
+
+            processedResults.push({
+              distance: movements.positions[i],
+              currentValue: restoredWaveform.level?.[i] || 0,
+              targetValue: planLine.targetLevel?.[i] || 0,
+              movement: movements.levelMovements[i] || 0,
+              priority
+            });
+          }
+        }
+
+        setResults(processedResults);
+
+        // 整正が必要な箇所の集計
+        const needsCorrection = processedResults.filter(r => Math.abs(r.movement) >= 5).length;
+        const highPriority = processedResults.filter(r => r.priority === 'high').length;
+
+        alert(`移動量算出完了\n総計算点数: ${processedResults.length}点\n整正必要箇所: ${needsCorrection}点\n高優先度: ${highPriority}点`);
       }
     } catch (error) {
       console.error('計算エラー:', error);

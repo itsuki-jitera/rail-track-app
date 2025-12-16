@@ -39,7 +39,7 @@ export const RestorationAnalysis: React.FC = () => {
       // ファイルアップロード
       const formData = new FormData();
       formData.append('file', file);
-      const uploadRes = await axios.post('http://localhost:3002/api/upload', formData);
+      const uploadRes = await axios.post('http://localhost:3003/api/upload', formData);
 
       // 復元波形計算
       const response = await axios.post('http://localhost:5000/api/restoration/vb6/calculate', {

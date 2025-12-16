@@ -22,6 +22,7 @@
     "react-dom": "^18.2.0",
     "react-dropzone": "^14.2.3",
     "react-plotly.js": "^2.6.0",
+    "react-router-dom": "^7.10.1",
     "react-window": "^1.8.10",
     "recharts": "^2.10.0",
     "zustand": "^4.4.7"

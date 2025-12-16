@@ -46,16 +46,28 @@ class PlanLineEditor {
       const endIdx = Math.min(length - 1, i + halfWindow);
 
       for (let j = startIdx; j <= endIdx; j++) {
-        sum += restoredWaveform[j].value;
-        count++;
+        // 完全なnullチェック - オブジェクト自体がnull/undefinedではないか確認してからvalueプロパティを確認
+        if (!restoredWaveform[j]) {
+          continue;
+        }
+        // オブジェクトが存在することを確認してからvalueプロパティを確認
+        const item = restoredWaveform[j];
+        if (item && typeof item === 'object' && 'value' in item && item.value !== null && item.value !== undefined) {
+          sum += item.value;
+          count++;
+        }
       }
 
       const average = count > 0 ? sum / count : 0;
 
-      planLine.push({
-        distance: restoredWaveform[i].distance,
-        value: parseFloat(average.toFixed(3))
-      });
+      // distanceのnullチェックも改善
+      const currentItem = restoredWaveform[i];
+      if (currentItem && typeof currentItem === 'object' && 'distance' in currentItem && currentItem.distance !== null && currentItem.distance !== undefined) {
+        planLine.push({
+          distance: currentItem.distance,
+          value: parseFloat(average.toFixed(3))
+        });
+      }
     }
 
     // 履歴に追加

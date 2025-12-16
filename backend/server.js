@@ -13,9 +13,11 @@ const fs = require('fs').promises;
 const analysisRoutes = require('./src/routes/analysis-routes');
 const mttRoutes = require('./src/routes/mtt-routes');
 const kiyaDataRoutes = require('./src/routes/kiya-data-routes');
+const restorationRoutes = require('./src/routes/restoration-routes');
+const planLineRoutes = require('./src/routes/plan-line-routes');
 
 // 環境変数の設定
-const PORT = process.env.PORT || 3002;
+const PORT = process.env.PORT || 3003;
 const HOST = process.env.HOST || 'localhost';
 
 // Expressアプリケーションの初期化
@@ -34,6 +36,72 @@ app.use('/output', express.static(path.join(__dirname, 'output')));
 app.use('/api/analysis', analysisRoutes);
 app.use('/api/mtt', mttRoutes);
 app.use('/api/kiya-data', kiyaDataRoutes);
+app.use('/api/restoration', restorationRoutes);
+app.use('/api/plan-line', planLineRoutes);
+
+// 移動量計算エンドポイント
+app.post('/api/calculate-movement', async (req, res) => {
+  try {
+    const { planLine, restoredWaveform, correctionMode, mttType } = req.body;
+
+    // 簡易的な移動量計算
+    const movements = {
+      positions: [],
+      levelMovements: [],
+      alignmentMovements: [],
+      liftingAmount: [],
+      shiftingAmount: []
+    };
+
+    // 計画線と復元波形の差分を計算
+    if (planLine && restoredWaveform) {
+      const minLength = Math.min(
+        planLine.positions?.length || 0,
+        restoredWaveform.positions?.length || 0
+      );
+
+      for (let i = 0; i < minLength; i++) {
+        const levelDiff = (planLine.targetLevel?.[i] || 0) - (restoredWaveform.level?.[i] || 0);
+        const alignmentDiff = (planLine.targetAlignment?.[i] || 0) - (restoredWaveform.alignment?.[i] || 0);
+
+        movements.positions.push(planLine.positions[i]);
+        movements.levelMovements.push(levelDiff);
+        movements.alignmentMovements.push(alignmentDiff);
+
+        // こう上量（レベル差が正の場合のみ）
+        movements.liftingAmount.push(Math.max(0, levelDiff));
+
+        // 通り整正量（絶対値）
+        movements.shiftingAmount.push(Math.abs(alignmentDiff));
+      }
+    }
+
+    // 統計情報
+    const stats = {
+      totalPoints: movements.positions.length,
+      maxLifting: Math.max(...movements.liftingAmount),
+      avgLifting: movements.liftingAmount.reduce((a, b) => a + b, 0) / movements.liftingAmount.length,
+      maxShifting: Math.max(...movements.shiftingAmount),
+      avgShifting: movements.shiftingAmount.reduce((a, b) => a + b, 0) / movements.shiftingAmount.length
+    };
+
+    res.json({
+      success: true,
+      data: {
+        movements,
+        stats,
+        correctionMode,
+        mttType
+      }
+    });
+  } catch (error) {
+    console.error('移動量計算エラー:', error);
+    res.status(500).json({
+      success: false,
+      error: error.message || '移動量計算中にエラーが発生しました'
+    });
+  }
+});
 
 // MTT機種一覧エンドポイント
 app.get('/api/mtt-types', async (req, res) => {

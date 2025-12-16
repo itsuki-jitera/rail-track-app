@@ -69,7 +69,7 @@ const CorrectionSettings: React.FC<CorrectionSettingsProps> = ({ data, onCorrect
     setError(null)
 
     try {
-      const response = await fetch('http://localhost:3002/api/apply-corrections', {
+      const response = await fetch('http://localhost:3003/api/apply-corrections', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({

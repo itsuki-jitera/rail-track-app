@@ -12,8 +12,8 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import { PresetButtons, StandardButton } from '../components/StandardButton';
-
-const API_BASE_URL = 'http://localhost:3002/api';
+import { useGlobalWorkspace } from '../contexts/GlobalWorkspaceContext';
+import { apiConfig } from '../config/api';
 
 // 型定義
 interface Dataset {
@@ -58,13 +58,48 @@ export const KiyaDataPage: React.FC = () => {
   const [error, setError] = useState<string | null>(null);
   const [uploadProgress, setUploadProgress] = useState<{[key: string]: number}>({});
 
+  // グローバル状態を使用
+  const { state, dispatch } = useGlobalWorkspace();
+
+  // データセット選択
+  const handleSelectDataset = (dataset: Dataset) => {
+    setSelectedDataset(dataset);
+
+    // O010ファイルが既にアップロードされている場合、グローバル状態を更新
+    if (dataset.files.o010 && dataset.data) {
+      dispatch({
+        type: 'LOAD_MTT_DATA',
+        payload: {
+          filename: dataset.files.o010,
+          uploadDate: new Date(dataset.updatedAt),
+          rawData: dataset.data,
+          metadata: {
+            totalLength: dataset.metadata.endKm && dataset.metadata.startKm
+              ? dataset.metadata.endKm - dataset.metadata.startKm
+              : 0,
+            measurementDate: dataset.metadata.measurementDate || new Date().toISOString(),
+            trainType: 'キヤ141',
+            direction: 'up' as 'up' | 'down'
+          }
+        }
+      });
+    }
+  };
+
   // データセット一覧を取得
   const fetchDatasets = async () => {
     try {
       setIsLoading(true);
-      const response = await axios.get(`${API_BASE_URL}/kiya-data/datasets`);
+      const response = await axios.get(apiConfig.endpoints.kiyaData.datasets);
       if (response.data.success) {
         setDatasets(response.data.datasets);
+
+        // 既存のデータセットで最新のO010ファイルがあるものがあれば自動選択
+        const datasetsWithO010 = response.data.datasets.filter((d: Dataset) => d.files.o010);
+        if (datasetsWithO010.length > 0 && !selectedDataset) {
+          const latestDataset = datasetsWithO010[datasetsWithO010.length - 1];
+          handleSelectDataset(latestDataset);
+        }
       }
     } catch (err: any) {
       setError(err.message);
@@ -76,7 +111,7 @@ export const KiyaDataPage: React.FC = () => {
   // 統計情報を取得
   const fetchStatistics = async () => {
     try {
-      const response = await axios.get(`${API_BASE_URL}/kiya-data/statistics`);
+      const response = await axios.get(apiConfig.endpoints.kiyaData.statistics);
       if (response.data.success) {
         setStatistics(response.data.statistics);
       }
@@ -96,7 +131,7 @@ export const KiyaDataPage: React.FC = () => {
     try {
       setIsLoading(true);
       setError(null);
-      const response = await axios.post(`${API_BASE_URL}/kiya-data/dataset`, {
+      const response = await axios.post(apiConfig.endpoints.kiyaData.dataset, {
         config: {
           name: `Dataset ${new Date().toLocaleString('ja-JP')}`,
           createdBy: 'user'
@@ -114,6 +149,29 @@ export const KiyaDataPage: React.FC = () => {
     }
   };
 
+  // ファイル名バリデーション（MTTファイル用）
+  const validateMTTFilename = (filename: string): boolean => {
+    // ファイル名から拡張子を除去
+    const nameWithoutExt = filename.split('.')[0];
+    const ext = filename.split('.').pop()?.toLowerCase();
+
+    // 以下のパターンを許可:
+    // 1. Xで始まる6文字（例: X12345.csv） - 本番データ形式
+    // 2. O010で始まるファイル（例: O010161677017.csv） - 旧ラボデータ形式
+    // 3. MDTファイル（例: KSD022DA.MDT） - 軌道狂いデータ
+
+    if (ext === 'mdt') {
+      return true; // 全てのMDTファイルを許可
+    }
+
+    if (ext === 'csv') {
+      return (nameWithoutExt.length === 6 && nameWithoutExt.startsWith('X')) ||
+             nameWithoutExt.startsWith('O010');
+    }
+
+    return false;
+  };
+
   // ファイルアップロード
   const handleFileUpload = async (
     datasetId: string,
@@ -122,14 +180,27 @@ export const KiyaDataPage: React.FC = () => {
   ) => {
     try {
       setError(null);
+
+      // MTTファイルの場合、ファイル名をチェック
+      if (fileType === 'o010') {
+        if (!validateMTTFilename(file.name)) {
+          setError('MTTファイルは以下の形式である必要があります: MDTファイル、O010で始まるCSVファイル（例: O010161677017.csv）、またはXで始まる6文字のCSVファイル（例: X12345.csv）');
+          return;
+        }
+      }
+
       const formData = new FormData();
       formData.append('file', file);
       formData.append('datasetId', datasetId);
 
       setUploadProgress(prev => ({ ...prev, [fileType]: 0 }));
 
+      const endpoint = fileType === 'lk' ? apiConfig.endpoints.kiyaData.uploadLK :
+                       fileType === 'ck' ? apiConfig.endpoints.kiyaData.uploadCK :
+                       apiConfig.endpoints.kiyaData.uploadO010;
+
       const response = await axios.post(
-        `${API_BASE_URL}/kiya-data/upload/${fileType}`,
+        endpoint,
         formData,
         {
           headers: { 'Content-Type': 'multipart/form-data' },
@@ -146,6 +217,71 @@ export const KiyaDataPage: React.FC = () => {
         setSelectedDataset(response.data.dataset);
         await fetchDatasets();
         setUploadProgress(prev => ({ ...prev, [fileType]: 100 }));
+
+        // MTTファイル(O010)がアップロードされた場合、グローバル状態を更新
+        if (fileType === 'o010' && response.data.dataset) {
+          dispatch({
+            type: 'LOAD_MTT_DATA',
+            payload: {
+              filename: file.name,
+              uploadDate: new Date(),
+              rawData: response.data.dataset.data,
+              metadata: {
+                totalLength: response.data.dataset.metadata.endKm - response.data.dataset.metadata.startKm,
+                measurementDate: response.data.dataset.metadata.measurementDate || new Date().toISOString(),
+                trainType: 'キヤ141',
+                direction: 'up' as 'up' | 'down'
+              }
+            }
+          });
+          alert(`MTTファイル「${file.name}」を読み込みました。次は作業区間設定を行ってください。`);
+        }
+
+        // CKファイル（曲線諸元データ）がアップロードされた場合、グローバル状態を更新
+        if (fileType === 'ck' && response.data.dataset) {
+          // 生データを保存
+          dispatch({
+            type: 'SET_CURVE_RAW_DATA',
+            payload: response.data.dataset.data.curves || response.data.dataset.data
+          });
+
+          // 曲線諸元データを保存
+          if (response.data.dataset.data.curves) {
+            const curveSpecs = response.data.dataset.data.curves.map((curve: any, index: number) => ({
+              id: curve.id || `curve_${index}`,
+              startPos: curve.start * 1000, // km to m
+              endPos: curve.end * 1000, // km to m
+              radius: curve.radius || 0,
+              cant: curve.cant || 0,
+              direction: curve.direction || 'right',
+              transitionLength: curve.transitionLength || 0
+            }));
+            dispatch({
+              type: 'SET_CURVE_SPECS',
+              payload: curveSpecs
+            });
+          }
+          console.log(`CKファイル「${file.name}」をグローバル状態に保存しました。`);
+        }
+
+        // LKファイル（線区情報）がアップロードされた場合、グローバル状態を更新
+        if (fileType === 'lk' && response.data.dataset) {
+          // 生データを保存
+          dispatch({
+            type: 'SET_LINE_RAW_DATA',
+            payload: response.data.dataset.data.sections || response.data.dataset.data
+          });
+
+          // 線区情報を保存
+          if (response.data.dataset.data.sections) {
+            dispatch({
+              type: 'SET_LINE_SECTIONS',
+              payload: response.data.dataset.data.sections
+            });
+          }
+          console.log(`LKファイル「${file.name}」をグローバル状態に保存しました。`);
+        }
+
         setTimeout(() => {
           setUploadProgress(prev => {
             const newProgress = { ...prev };
@@ -169,7 +305,7 @@ export const KiyaDataPage: React.FC = () => {
     try {
       setIsLoading(true);
       setError(null);
-      const response = await axios.post(`${API_BASE_URL}/kiya-data/convert/labocs`, {
+      const response = await axios.post(apiConfig.endpoints.kiyaData.convertLabocs, {
         datasetId,
         options: {
           dataInterval: 0.25
@@ -180,7 +316,7 @@ export const KiyaDataPage: React.FC = () => {
         alert('LABOCS形式への変換が完了しました');
         // データセット情報を再取得
         const datasetResponse = await axios.get(
-          `${API_BASE_URL}/kiya-data/dataset/${datasetId}`
+          `${apiConfig.endpoints.kiyaData.dataset}/${datasetId}`
         );
         if (datasetResponse.data.success) {
           setSelectedDataset(datasetResponse.data.dataset);
@@ -202,7 +338,7 @@ export const KiyaDataPage: React.FC = () => {
       setIsLoading(true);
       setError(null);
       const response = await axios.delete(
-        `${API_BASE_URL}/kiya-data/dataset/${datasetId}`
+        `${apiConfig.endpoints.kiyaData.dataset}/${datasetId}`
       );
 
       if (response.data.success) {
@@ -217,11 +353,6 @@ export const KiyaDataPage: React.FC = () => {
     } finally {
       setIsLoading(false);
     }
-  };
-
-  // データセット選択
-  const handleSelectDataset = (dataset: Dataset) => {
-    setSelectedDataset(dataset);
   };
 
   // ファイル選択ハンドラー
@@ -446,16 +577,29 @@ export const KiyaDataPage: React.FC = () => {
                   </div>
 
                   {/* O010ファイル */}
-                  <div style={{ border: '1px solid #ddd', padding: '15px', borderRadius: '4px' }}>
+                  <div style={{
+                    border: state.status.dataLoaded ? '2px solid #4caf50' : '1px solid #ddd',
+                    padding: '15px',
+                    borderRadius: '4px',
+                    background: state.status.dataLoaded ? '#f1f8e9' : 'white'
+                  }}>
                     <div style={{ marginBottom: '10px' }}>
-                      <strong>O010ファイル（旧測定データ）</strong>
+                      <strong>O010ファイル（MTTデータ）</strong>
                       {selectedDataset.files.o010 && (
                         <span style={{ marginLeft: '10px', color: '#4caf50' }}>✓ アップロード済み</span>
                       )}
+                      {state.status.dataLoaded && (
+                        <span style={{ marginLeft: '10px', color: '#4caf50', fontWeight: 'bold' }}>
+                          ✓ グローバルデータ読込済
+                        </span>
+                      )}
+                    </div>
+                    <div style={{ marginBottom: '10px', fontSize: '12px', color: '#666' }}>
+                      ※ 対応形式: MDTファイル、O010で始まるCSVファイル、Xで始まる6文字のCSVファイル
                     </div>
                     <input
                       type="file"
-                      accept=".csv"
+                      accept=".csv,.mdt"
                       onChange={(e) => handleFileChange(selectedDataset.id, 'o010', e)}
                       style={{ width: '100%' }}
                     />

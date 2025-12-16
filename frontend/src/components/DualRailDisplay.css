@@ -1,0 +1,232 @@
+/* DualRailDisplay.css */
+
+.dual-rail-display {
+  background: #f5f5f5;
+  border-radius: 8px;
+  padding: 20px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+/* チャートコンテナ */
+.dual-rail-display .chart-container {
+  background: white;
+  border-radius: 6px;
+  padding: 20px;
+  margin-bottom: 20px;
+  position: relative;
+}
+
+/* 統計パネル */
+.statistics-panel {
+  background: white;
+  border-radius: 6px;
+  padding: 20px;
+  margin-bottom: 20px;
+}
+
+.statistics-panel h4 {
+  margin: 0 0 20px 0;
+  color: #495057;
+  font-size: 1.2rem;
+  border-bottom: 2px solid #e9ecef;
+  padding-bottom: 10px;
+}
+
+.statistics-panel h5 {
+  margin: 0 0 10px 0;
+  color: #6c757d;
+  font-size: 1rem;
+}
+
+.statistics-panel h6 {
+  margin: 0 0 8px 0;
+  color: #6c757d;
+  font-size: 0.9rem;
+  font-weight: 600;
+}
+
+/* 統計グリッド */
+.stats-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 20px;
+  margin-bottom: 20px;
+}
+
+.stats-section {
+  padding: 15px;
+  background: #f8f9fa;
+  border-radius: 4px;
+  border-left: 4px solid #007bff;
+}
+
+.stats-section:nth-child(2) {
+  border-left-color: #ff9f40;
+}
+
+.stats-section:nth-child(3) {
+  border-left-color: #4bc0c0;
+}
+
+.stats-section p {
+  margin: 5px 0;
+  color: #495057;
+  font-size: 0.9rem;
+}
+
+/* 移動量サマリー */
+.movement-summary {
+  background: #fff3cd;
+  border: 1px solid #ffc107;
+  border-radius: 4px;
+  padding: 15px;
+  margin-top: 20px;
+}
+
+.movement-section {
+  display: inline-block;
+  width: 48%;
+  margin-right: 2%;
+  padding: 10px;
+  background: white;
+  border-radius: 4px;
+  margin-top: 10px;
+}
+
+.movement-section p {
+  margin: 5px 0;
+  color: #495057;
+  font-size: 0.9rem;
+}
+
+.movement-section p:first-of-type {
+  font-weight: 600;
+  color: #28a745;
+}
+
+/* 凡例情報 */
+.legend-info {
+  background: white;
+  border-radius: 6px;
+  padding: 15px;
+  display: flex;
+  justify-content: space-around;
+  align-items: center;
+}
+
+.info-text {
+  display: flex;
+  align-items: center;
+  color: #6c757d;
+  font-size: 0.9rem;
+  margin: 0;
+}
+
+.legend-marker {
+  display: inline-block;
+  width: 20px;
+  height: 3px;
+  margin-right: 8px;
+}
+
+.legend-marker.left-rail {
+  background: rgb(54, 162, 235);
+}
+
+.legend-marker.right-rail {
+  background: rgb(255, 159, 64);
+}
+
+.legend-marker.cant-diff {
+  background: rgb(75, 192, 192);
+}
+
+/* カント差強調表示 */
+.cant-difference-highlight {
+  position: absolute;
+  background: rgba(75, 192, 192, 0.1);
+  border: 1px solid rgba(75, 192, 192, 0.5);
+  pointer-events: none;
+}
+
+.cant-difference-highlight.warning {
+  background: rgba(255, 193, 7, 0.1);
+  border-color: rgba(255, 193, 7, 0.5);
+}
+
+.cant-difference-highlight.critical {
+  background: rgba(220, 53, 69, 0.1);
+  border-color: rgba(220, 53, 69, 0.5);
+}
+
+/* ツールチップカスタマイズ */
+.dual-rail-display .chartjs-tooltip {
+  background: rgba(0, 0, 0, 0.8) !important;
+  border-radius: 4px;
+  padding: 10px;
+  font-size: 0.85rem;
+}
+
+/* レスポンシブ対応 */
+@media (max-width: 768px) {
+  .stats-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .movement-section {
+    display: block;
+    width: 100%;
+    margin-right: 0;
+    margin-bottom: 10px;
+  }
+
+  .legend-info {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .info-text {
+    margin-bottom: 10px;
+  }
+
+  .dual-rail-display .chart-container {
+    height: 400px !important;
+  }
+}
+
+/* アニメーション */
+@keyframes highlight-pulse {
+  0% { opacity: 0.3; }
+  50% { opacity: 0.6; }
+  100% { opacity: 0.3; }
+}
+
+.cant-difference-highlight.animated {
+  animation: highlight-pulse 2s infinite;
+}
+
+/* データポイントホバー効果 */
+.dual-rail-display .chart-container canvas {
+  transition: opacity 0.2s;
+}
+
+.dual-rail-display .chart-container canvas:hover {
+  opacity: 0.98;
+}
+
+/* 印刷対応 */
+@media print {
+  .dual-rail-display {
+    box-shadow: none;
+    page-break-inside: avoid;
+  }
+
+  .chart-container {
+    height: 400px !important;
+  }
+
+  .statistics-panel,
+  .legend-info {
+    page-break-inside: avoid;
+  }
+}

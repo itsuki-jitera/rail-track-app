@@ -1,0 +1,223 @@
+/* MovementAmountDisplay.css */
+
+.movement-amount-display {
+  background: white;
+  border-radius: 8px;
+  padding: 20px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  margin: 20px 0;
+}
+
+/* コントロールパネル */
+.control-panel {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 20px;
+  padding: 15px;
+  background: #f8f9fa;
+  border-radius: 6px;
+  border: 1px solid #dee2e6;
+}
+
+.display-mode-selector {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.display-mode-selector label {
+  font-weight: 500;
+  color: #495057;
+}
+
+.display-mode-selector select {
+  padding: 6px 12px;
+  border: 1px solid #ced4da;
+  border-radius: 4px;
+  background: white;
+  cursor: pointer;
+  transition: border-color 0.15s ease-in-out;
+}
+
+.display-mode-selector select:hover {
+  border-color: #80bdff;
+}
+
+.display-mode-selector select:focus {
+  outline: none;
+  border-color: #80bdff;
+  box-shadow: 0 0 0 0.2rem rgba(0, 123, 255, 0.25);
+}
+
+.option-toggles {
+  display: flex;
+  gap: 20px;
+}
+
+.option-toggles label {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  cursor: pointer;
+  font-size: 14px;
+  color: #495057;
+}
+
+.option-toggles input[type="checkbox"] {
+  cursor: pointer;
+}
+
+/* チャートコンテナ */
+.chart-container {
+  position: relative;
+  margin: 20px 0;
+  padding: 10px;
+  background: #fff;
+  border: 1px solid #e2e8f0;
+  border-radius: 6px;
+}
+
+/* 統計情報パネル */
+.statistics-panel {
+  margin-top: 30px;
+  padding: 20px;
+  background: #f8f9fa;
+  border-radius: 6px;
+  border: 1px solid #dee2e6;
+}
+
+.statistics-panel h3 {
+  margin: 0 0 20px 0;
+  color: #343a40;
+  font-size: 1.2rem;
+  border-bottom: 2px solid #007bff;
+  padding-bottom: 10px;
+}
+
+.stats-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 15px;
+  margin-bottom: 20px;
+}
+
+.stat-item {
+  display: flex;
+  justify-content: space-between;
+  padding: 10px;
+  background: white;
+  border-radius: 4px;
+  border: 1px solid #dee2e6;
+  transition: transform 0.2s ease;
+}
+
+.stat-item:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.stat-item label {
+  font-weight: 500;
+  color: #6c757d;
+  font-size: 0.9rem;
+}
+
+.stat-item span {
+  font-weight: bold;
+  color: #212529;
+}
+
+.stat-item.warning span {
+  color: #dc3545;
+}
+
+.up-movement {
+  color: #007bff !important;
+}
+
+.down-movement {
+  color: #ffc107 !important;
+}
+
+/* 評価パネル */
+.evaluation-panel {
+  margin-top: 20px;
+  padding: 15px;
+  background: white;
+  border-radius: 6px;
+  border: 1px solid #dee2e6;
+}
+
+.evaluation-panel h4 {
+  margin: 0 0 15px 0;
+  color: #495057;
+  font-size: 1.1rem;
+}
+
+.evaluation-result {
+  padding: 12px;
+  border-radius: 4px;
+  font-weight: 500;
+  text-align: center;
+  font-size: 1rem;
+}
+
+.evaluation-result.good {
+  background: #d4edda;
+  border: 1px solid #c3e6cb;
+  color: #155724;
+}
+
+.evaluation-result.warning {
+  background: #fff3cd;
+  border: 1px solid #ffeaa7;
+  color: #856404;
+}
+
+/* レスポンシブ対応 */
+@media (max-width: 768px) {
+  .control-panel {
+    flex-direction: column;
+    gap: 15px;
+    align-items: stretch;
+  }
+
+  .option-toggles {
+    justify-content: space-around;
+  }
+
+  .stats-grid {
+    grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  }
+}
+
+/* ダークモード対応（オプション） */
+@media (prefers-color-scheme: dark) {
+  .movement-amount-display {
+    background: #1a1a1a;
+    color: #e0e0e0;
+  }
+
+  .control-panel,
+  .statistics-panel {
+    background: #2a2a2a;
+    border-color: #3a3a3a;
+  }
+
+  .stat-item {
+    background: #2a2a2a;
+    border-color: #3a3a3a;
+  }
+
+  .evaluation-panel {
+    background: #2a2a2a;
+    border-color: #3a3a3a;
+  }
+
+  select {
+    background: #2a2a2a;
+    color: #e0e0e0;
+    border-color: #3a3a3a;
+  }
+}

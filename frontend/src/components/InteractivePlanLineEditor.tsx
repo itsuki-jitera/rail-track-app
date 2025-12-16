@@ -57,7 +57,12 @@ export const InteractivePlanLineEditor: React.FC<InteractivePlanLineEditorProps>
 
   // 初期化
   useEffect(() => {
+    console.log('InteractivePlanLineEditor - Initializing');
+    console.log('InteractivePlanLineEditor - restoredWaveform:', restoredWaveform ? `${restoredWaveform.length} points` : 'null/undefined');
+    console.log('InteractivePlanLineEditor - initialPlanLine:', initialPlanLine ? `${initialPlanLine.length} points` : 'null/undefined');
+
     const initial = generateInitialPlanLine();
+    console.log('InteractivePlanLineEditor - generated initial:', initial ? `${initial.length} points` : 'null');
     setPlanLine(initial);
 
     // コントロールポイントの生成 (20個程度)
@@ -74,6 +79,7 @@ export const InteractivePlanLineEditor: React.FC<InteractivePlanLineEditorProps>
       });
     }
 
+    console.log('InteractivePlanLineEditor - control points:', points.length);
     setControlPoints(points);
   }, [restoredWaveform, generateInitialPlanLine]);
 
@@ -157,7 +163,7 @@ export const InteractivePlanLineEditor: React.FC<InteractivePlanLineEditorProps>
 
     try {
       const fileContent = await kiyaFile.text();
-      const response = await axios.post('http://localhost:3002/api/restoration/import/kiya-o010', {
+      const response = await axios.post('http://localhost:3003/api/restoration/import/kiya-o010', {
         csvContent: fileContent,
         railSide: selectedRail
       });
@@ -199,17 +205,44 @@ export const InteractivePlanLineEditor: React.FC<InteractivePlanLineEditorProps>
 
   // キャンバス描画
   useEffect(() => {
-    if (!canvasRef.current) return;
+    console.log('Canvas drawing - Starting');
+    if (!canvasRef.current) {
+      console.log('Canvas drawing - No canvas ref');
+      return;
+    }
 
     const canvas = canvasRef.current;
     const ctx = canvas.getContext('2d');
-    if (!ctx) return;
+    if (!ctx) {
+      console.log('Canvas drawing - No context');
+      return;
+    }
 
     const width = canvas.width;
     const height = canvas.height;
+    console.log(`Canvas drawing - Dimensions: ${width}x${height}`);
 
     // クリア
     ctx.clearRect(0, 0, width, height);
+
+    // 背景を白に塗る
+    ctx.fillStyle = '#ffffff';
+    ctx.fillRect(0, 0, width, height);
+
+    if (restoredWaveform.length === 0) {
+      console.log('Canvas drawing - No waveform data');
+      // データがない場合でも枠線を描画
+      ctx.strokeStyle = '#e5e7eb';
+      ctx.lineWidth = 1;
+      ctx.strokeRect(0, 0, width, height);
+
+      // "データなし"メッセージ
+      ctx.fillStyle = '#9ca3af';
+      ctx.font = '14px sans-serif';
+      ctx.textAlign = 'center';
+      ctx.fillText('データがありません', width / 2, height / 2);
+      return;
+    }
 
     // スケール計算
     const minValue = Math.min(...restoredWaveform);
@@ -217,12 +250,50 @@ export const InteractivePlanLineEditor: React.FC<InteractivePlanLineEditorProps>
     const range = maxValue - minValue;
     const padding = range * 0.1;
 
+    console.log(`Canvas drawing - Data range: ${minValue} to ${maxValue}, range: ${range}`);
+
     const scaleX = width / (restoredWaveform.length - 1);
     const scaleY = height / (range + 2 * padding);
 
+    // グリッド線を描画
+    ctx.strokeStyle = '#e5e7eb';
+    ctx.lineWidth = 0.5;
+    ctx.setLineDash([2, 2]);
+
+    // 水平グリッド線（5本）
+    for (let i = 0; i <= 4; i++) {
+      const y = (height / 4) * i;
+      ctx.beginPath();
+      ctx.moveTo(0, y);
+      ctx.lineTo(width, y);
+      ctx.stroke();
+    }
+
+    // 垂直グリッド線（10本）
+    for (let i = 0; i <= 10; i++) {
+      const x = (width / 10) * i;
+      ctx.beginPath();
+      ctx.moveTo(x, 0);
+      ctx.lineTo(x, height);
+      ctx.stroke();
+    }
+
+    ctx.setLineDash([]);
+
+    // 中心線（0mm基準線）を強調
+    const zeroY = height - (((0 - (minValue - padding)) * scaleY));
+    ctx.strokeStyle = '#9ca3af';
+    ctx.lineWidth = 2;
+    ctx.setLineDash([5, 5]);
+    ctx.beginPath();
+    ctx.moveTo(0, zeroY);
+    ctx.lineTo(width, zeroY);
+    ctx.stroke();
+    ctx.setLineDash([]);
+
     // 復元波形を描画
     ctx.strokeStyle = '#3b82f6';
-    ctx.lineWidth = 1.5;
+    ctx.lineWidth = 2.5;
     ctx.beginPath();
 
     restoredWaveform.forEach((value, i) => {
@@ -240,8 +311,8 @@ export const InteractivePlanLineEditor: React.FC<InteractivePlanLineEditorProps>
 
     // 計画線を描画
     ctx.strokeStyle = '#10b981';
-    ctx.lineWidth = 2;
-    ctx.setLineDash([5, 5]);
+    ctx.lineWidth = 3;
+    ctx.setLineDash([8, 4]);
     ctx.beginPath();
 
     planLine.forEach((value, i) => {
@@ -263,14 +334,27 @@ export const InteractivePlanLineEditor: React.FC<InteractivePlanLineEditorProps>
       const x = point.index * scaleX;
       const y = height - ((point.value - (minValue - padding)) * scaleY);
 
+      // 外側の円（影のように見せる）
+      ctx.fillStyle = 'rgba(0, 0, 0, 0.1)';
+      ctx.beginPath();
+      ctx.arc(x, y + 2, 10, 0, 2 * Math.PI);
+      ctx.fill();
+
+      // メインの円
       ctx.fillStyle = draggedPointIndex === i ? '#f59e0b' : '#10b981';
       ctx.strokeStyle = '#ffffff';
-      ctx.lineWidth = 2;
+      ctx.lineWidth = 3;
 
       ctx.beginPath();
-      ctx.arc(x, y, 6, 0, 2 * Math.PI);
+      ctx.arc(x, y, 8, 0, 2 * Math.PI);
       ctx.fill();
       ctx.stroke();
+
+      // ハイライト（中心の小さい円）
+      ctx.fillStyle = 'rgba(255, 255, 255, 0.5)';
+      ctx.beginPath();
+      ctx.arc(x, y - 2, 3, 0, 2 * Math.PI);
+      ctx.fill();
     });
 
   }, [restoredWaveform, planLine, controlPoints, draggedPointIndex]);
@@ -348,11 +432,12 @@ export const InteractivePlanLineEditor: React.FC<InteractivePlanLineEditorProps>
           緑色の点をドラッグして計画線を編集できます
         </p>
 
-        <canvas
-          ref={canvasRef}
-          width={800}
-          height={300}
-          onMouseDown={(e) => {
+        <div style={{ width: '100%', height: '300px', position: 'relative', background: '#f9fafb', borderRadius: '8px', border: '2px solid #e5e7eb', overflow: 'hidden' }}>
+          <canvas
+            ref={canvasRef}
+            width={1200}
+            height={300}
+            onMouseDown={(e) => {
             const canvas = canvasRef.current;
             if (!canvas) return;
 
@@ -368,10 +453,21 @@ export const InteractivePlanLineEditor: React.FC<InteractivePlanLineEditorProps>
 
             controlPoints.forEach((point, i) => {
               const pointX = point.index * scaleX;
-              const distance = Math.abs(x - pointX);
 
-              if (distance < minDistance && distance < 20) {
-                minDistance = distance;
+              // Y座標も考慮して円の範囲内かチェック
+              const minValue = Math.min(...restoredWaveform);
+              const maxValue = Math.max(...restoredWaveform);
+              const range = maxValue - minValue;
+              const padding = range * 0.1;
+              const scaleY = canvas.height / (range + 2 * padding);
+              const pointY = canvas.height - ((point.value - (minValue - padding)) * scaleY);
+
+              const distanceX = Math.abs(x - pointX);
+              const distanceY = Math.abs(y - pointY);
+              const totalDistance = Math.sqrt(distanceX * distanceX + distanceY * distanceY);
+
+              if (totalDistance < minDistance && totalDistance < 15) {
+                minDistance = totalDistance;
                 nearestIndex = i;
               }
             });
@@ -384,13 +480,13 @@ export const InteractivePlanLineEditor: React.FC<InteractivePlanLineEditorProps>
           onMouseUp={handleMouseUp}
           onMouseLeave={handleMouseUp}
           style={{
-            border: '2px solid #e5e7eb',
-            borderRadius: '8px',
             cursor: isDragging ? 'grabbing' : 'grab',
             width: '100%',
-            height: 'auto'
+            height: '100%',
+            maxWidth: '1200px'
           }}
         />
+        </div>
       </div>
 
       {/* キヤデータインポートダイアログ */}

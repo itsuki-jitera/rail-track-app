@@ -4,7 +4,7 @@
  * 軌道整正の目標となる計画線を設定
  */
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Line } from 'react-chartjs-2';
 import {
   Chart as ChartJS,
@@ -20,6 +20,7 @@ import { PresetButtons, StandardButton } from '../components/StandardButton';
 import { InteractiveChart } from '../components/InteractiveChart';
 import { AdvancedPlanLineEditor } from '../components/AdvancedPlanLineEditor';
 import { FullscreenPlanLineEditor } from '../components/FullscreenPlanLineEditor';
+import { useGlobalWorkspace, workspaceSelectors } from '../contexts/GlobalWorkspaceContext';
 import './PageStyles.css';
 
 // Chart.jsのコンポーネントを登録
@@ -49,30 +50,66 @@ interface PlanLineSection {
 }
 
 export const PlanLinePage: React.FC = () => {
-  // サンプルデータを初期値として設定
-  const samplePlanPoints: PlanLinePoint[] = [
-    { position: 0, targetLevel: 0, targetAlignment: 0 },
-    { position: 50, targetLevel: 5, targetAlignment: 2 },
-    { position: 100, targetLevel: 10, targetAlignment: 5 },
-    { position: 150, targetLevel: 12, targetAlignment: 3 },
-    { position: 200, targetLevel: 15, targetAlignment: -2 },
-    { position: 250, targetLevel: 13, targetAlignment: -5 },
-    { position: 300, targetLevel: 10, targetAlignment: -3 },
-    { position: 350, targetLevel: 8, targetAlignment: 0 },
-    { position: 400, targetLevel: 5, targetAlignment: 2 },
-    { position: 450, targetLevel: 3, targetAlignment: 3 },
-    { position: 500, targetLevel: 0, targetAlignment: 0 }
-  ];
+  // グローバル状態を使用
+  const { state, dispatch, canSetPlanLine, getNextRequiredStep } = useGlobalWorkspace();
 
-  const [planPoints, setPlanPoints] = useState<PlanLinePoint[]>(samplePlanPoints);
-  const [sections, setSections] = useState<PlanLineSection[]>([
-    { startPos: 0, endPos: 100, type: 'straight', gradient: 10 },
-    { startPos: 100, endPos: 200, type: 'curve', radius: 600, cant: 50, gradient: 5 },
-    { startPos: 200, endPos: 300, type: 'transition', gradient: -5 },
-    { startPos: 300, endPos: 500, type: 'straight', gradient: -10 }
-  ]);
+  // グローバル状態からデータを取得
+  const restoredWaveform = workspaceSelectors.getRestoredWaveform(state);
+  const existingPlanLine = workspaceSelectors.getPlanLine(state);
+  const isReadyForPlanLine = workspaceSelectors.isReadyForPlanLine(state);
+
+  // 実データが読み込まれるまで空配列で初期化（既存の計画線があれば使用）
+  const [planPoints, setPlanPoints] = useState<PlanLinePoint[]>([]);
+  const [sections, setSections] = useState<PlanLineSection[]>([]);
+
+  // 計算方法設定
   const [calculationMethod, setCalculationMethod] = useState<'convex' | 'spline' | 'linear'>('convex');
   const [smoothingFactor, setSmoothingFactor] = useState(0.5);
+
+  // グローバル状態から復元波形データを取得して初期化
+  useEffect(() => {
+    if (restoredWaveform && restoredWaveform.positions && restoredWaveform.positions.length > 0) {
+      // 復元波形データから初期計画線を生成
+      const initialPoints: PlanLinePoint[] = [];
+
+      // データの全長を計算
+      const totalLength = restoredWaveform.positions[restoredWaveform.positions.length - 1] - restoredWaveform.positions[0];
+
+      // 全長に応じてサンプリング間隔を調整
+      let interval: number;
+      if (totalLength <= 100) {
+        interval = 1;  // 100m以下：0.25m間隔（全データ）
+      } else if (totalLength <= 500) {
+        interval = 4;  // 500m以下：1m間隔
+      } else if (totalLength <= 1000) {
+        interval = 10; // 1km以下：2.5m間隔
+      } else if (totalLength <= 5000) {
+        interval = 20; // 5km以下：5m間隔
+      } else {
+        interval = 40; // 5km超：10m間隔
+      }
+
+      for (let i = 0; i < restoredWaveform.positions.length; i += interval) {
+        initialPoints.push({
+          position: restoredWaveform.positions[i],
+          targetLevel: restoredWaveform.level[i] || 0,
+          targetAlignment: restoredWaveform.alignment[i] || 0,
+        });
+      }
+
+      console.log(`計画線データを生成: ${initialPoints.length}点（元データ: ${restoredWaveform.positions.length}点）`);
+      console.log(`全長: ${totalLength.toFixed(1)}m, サンプリング: ${interval * 0.25}m間隔`);
+      setPlanPoints(initialPoints);
+    } else if (existingPlanLine && existingPlanLine.positions) {
+      // 既存の計画線データがあれば使用
+      const points: PlanLinePoint[] = existingPlanLine.positions.map((pos, idx) => ({
+        position: pos,
+        targetLevel: existingPlanLine.targetLevel[idx],
+        targetAlignment: existingPlanLine.targetAlignment[idx],
+      }));
+      setPlanPoints(points);
+    }
+  }, [restoredWaveform, existingPlanLine]);
 
   // 編集モード用の状態
   const [editMode, setEditMode] = useState(false);
@@ -160,19 +197,36 @@ export const PlanLinePage: React.FC = () => {
 
   const savePlanLine = async () => {
     try {
-      const response = await fetch('/api/plan-line/save', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          points: planPoints,
-          sections,
-          method: calculationMethod
-        })
+      // APIコールをスキップして直接グローバル状態に保存
+      // （バックエンドAPIが未実装の可能性があるため）
+
+      // グローバル状態に計画線を保存
+      dispatch({
+        type: 'SET_PLAN_LINE',
+        payload: {
+          positions: planPoints.map(p => p.position),
+          targetLevel: planPoints.map(p => p.targetLevel),
+          targetAlignment: planPoints.map(p => p.targetAlignment),
+          fixedPoints: [],
+          method: calculationMethod,
+        }
       });
 
-      if (response.ok) {
-        alert('計画線設定を保存しました');
-      }
+      console.log('計画線を保存しました:', {
+        点数: planPoints.length,
+        メソッド: calculationMethod
+      });
+
+      alert('計画線設定を保存しました');
+
+      // オプション：ローカルストレージにも保存
+      localStorage.setItem('planLine', JSON.stringify({
+        points: planPoints,
+        sections,
+        method: calculationMethod,
+        savedAt: new Date().toISOString()
+      }));
+
     } catch (error) {
       console.error('保存エラー:', error);
       alert('保存に失敗しました');
@@ -254,12 +308,68 @@ export const PlanLinePage: React.FC = () => {
         <p>軌道整正の目標となる計画線を設定します（PDF P17-20準拠）</p>
       </div>
 
-      {/* フルスクリーン統合型エディタ（すべての機能を含む） */}
+      {/* データ未読込時の警告表示 */}
+      {!isReadyForPlanLine && (
+        <div className="warning-box" style={{
+          margin: '20px',
+          padding: '30px',
+          background: '#fff3cd',
+          border: '2px solid #ffc107',
+          borderRadius: '8px'
+        }}>
+          <h3>⚠️ 作業を開始する前に</h3>
+          <p>計画線を設定するには、以下の手順で作業を進めてください：</p>
+          <ol style={{ lineHeight: '2em' }}>
+            <li style={{ fontWeight: state.status.dataLoaded ? 'normal' : 'bold', color: state.status.dataLoaded ? '#28a745' : '#000' }}>
+              {state.status.dataLoaded ? '✓' : '•'} <strong>「🚃 キヤデータ読込」</strong>でMTTデータをアップロード（ファイル名は先頭「X」で6文字）
+            </li>
+            <li style={{ fontWeight: state.status.sectionCut ? 'normal' : 'bold', color: state.status.sectionCut ? '#28a745' : '#000' }}>
+              {state.status.sectionCut ? '✓' : '•'} <strong>「📍 作業区間設定」</strong>で必要区間を切り取り（前後500m以上余分に切取）
+            </li>
+            <li><strong>「📐 曲線諸元設定」</strong>で曲線データを入力（曲線区間がある場合）</li>
+            <li><strong>「⚠️ 移動量制限」</strong>で制限箇所を設定</li>
+            <li><strong>「📏 手検測入力」</strong>で手検測データを入力（必要に応じて）</li>
+            <li style={{ fontWeight: state.status.waveformCalculated ? 'normal' : 'bold', color: state.status.waveformCalculated ? '#28a745' : '#000' }}>
+              {state.status.waveformCalculated ? '✓' : '•'} <strong>「⚙️ 復元波形計算」</strong>を実行
+            </li>
+            <li>その後、<strong>計画線を設定</strong>できるようになります</li>
+          </ol>
+          {getNextRequiredStep() && (
+            <div style={{ marginTop: '20px', padding: '15px', background: '#fff3e0', borderRadius: '6px' }}>
+              <strong>🔔 次の作業：</strong> {getNextRequiredStep()}
+            </div>
+          )}
+          <div style={{ marginTop: '20px', padding: '15px', background: '#e7f3ff', borderRadius: '6px' }}>
+            <strong>💡 ヒント：</strong>
+            <ul style={{ marginTop: '10px' }}>
+              <li>WB区間の始終点から50m以上離れた点で切取ってください</li>
+              <li>作業開始・終了地点はW区間を避けてください</li>
+              <li>水準狂いとカントを重ね合わせて位置合わせを正確に行ってください</li>
+            </ul>
+          </div>
+        </div>
+      )}
+
+      {/* フルスクリーン統合型エディタ（データがある場合のみ表示） */}
       <div style={{ height: 'calc(100vh - 200px)', margin: '20px 0' }}>
-        <FullscreenPlanLineEditor
-          initialData={planPoints}
-          onSave={handleEditorSave}
-        />
+        {isReadyForPlanLine && planPoints.length > 0 ? (
+          <FullscreenPlanLineEditor
+            initialData={planPoints}
+            onSave={handleEditorSave}
+          />
+        ) : (
+          <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100%', background: '#f8f9fa', borderRadius: '8px' }}>
+            <div style={{ textAlign: 'center', color: '#6c757d' }}>
+              <h2>📊 データ待機中</h2>
+              <p>上記の手順に従って、まずは必要な作業を完了してください</p>
+              {getNextRequiredStep() && (
+                <div style={{ marginTop: '20px', fontSize: '1.1em', color: '#ff6b6b' }}>
+                  <strong>次のステップ：</strong> {getNextRequiredStep()}
+                </div>
+              )}
+            </div>
+          </div>
+        )}
       </div>
 
       {/* 既存の設定セクション（折りたたみ可能） - 固定位置フローティングボタン */}

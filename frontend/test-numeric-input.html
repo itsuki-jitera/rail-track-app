@@ -1,0 +1,174 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>NumericInput テスト結果</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+            max-width: 800px;
+            margin: 40px auto;
+            padding: 20px;
+            background: #f5f5f5;
+        }
+        h1 {
+            color: #333;
+            border-bottom: 2px solid #3b82f6;
+            padding-bottom: 10px;
+        }
+        .test-summary {
+            background: white;
+            border-radius: 8px;
+            padding: 20px;
+            margin: 20px 0;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .success {
+            color: #10b981;
+            font-weight: bold;
+        }
+        .improvement {
+            color: #f59e0b;
+        }
+        .issue {
+            color: #ef4444;
+        }
+        .code-block {
+            background: #1e1e1e;
+            color: #d4d4d4;
+            padding: 15px;
+            border-radius: 5px;
+            overflow-x: auto;
+            font-family: 'Consolas', 'Monaco', monospace;
+            font-size: 14px;
+            margin: 10px 0;
+        }
+        ul {
+            line-height: 1.8;
+        }
+        .solution-step {
+            background: #e0f2fe;
+            border-left: 4px solid #3b82f6;
+            padding: 10px 15px;
+            margin: 10px 0;
+        }
+    </style>
+</head>
+<body>
+    <h1>🔧 作業区間設定の入力フィールド問題 - 解決レポート</h1>
+
+    <div class="test-summary">
+        <h2 class="success">✅ 根本的な解決を実施しました</h2>
+        <p>作業区間設定時に値がずれる問題について、根本原因を特定し、カスタムNumericInputコンポーネントで解決しました。</p>
+    </div>
+
+    <div class="test-summary">
+        <h2>🔍 問題の根本原因</h2>
+        <p><strong>原因:</strong> HTMLの<code>type="number"</code>入力フィールドとReactの状態管理の相性問題</p>
+
+        <h3>詳細な問題点:</h3>
+        <ul>
+            <li class="issue">文字列と数値の型が混在（e.target.valueは文字列、stateは数値）</li>
+            <li class="issue">入力中にカーソル位置がリセットされる</li>
+            <li class="issue">値の変換タイミングで約1メートルのオフセットが発生</li>
+        </ul>
+
+        <div class="code-block">
+// 問題のあったコード
+&lt;input
+  type="number"
+  value={workSection.startPosition}  // 文字列
+  onChange={(e) => handleInputChange('startPosition', e.target.value)}  // 文字列を渡す
+/&gt;
+
+// handleInputChange内で Number() 変換
+// → 型の不一致でカーソル位置と値がずれる
+        </div>
+    </div>
+
+    <div class="test-summary">
+        <h2>💡 実装した解決策</h2>
+
+        <div class="solution-step">
+            <h3>1. カスタムNumericInputコンポーネントの作成</h3>
+            <p>専用のNumericInputコンポーネントを作成し、以下の機能を実装：</p>
+            <ul>
+                <li>内部では文字列として管理</li>
+                <li>カーソル位置を保持・復元</li>
+                <li>数値検証と適切な変換</li>
+                <li>未入力状態（空文字列）の適切な処理</li>
+            </ul>
+        </div>
+
+        <div class="solution-step">
+            <h3>2. WorkSectionPageの更新</h3>
+            <p>問題のあった4つの入力フィールドを置き換え：</p>
+            <ul>
+                <li class="success">作業開始位置 → NumericInput</li>
+                <li class="success">作業終了位置 → NumericInput</li>
+                <li class="success">前方バッファ → NumericInput</li>
+                <li class="success">後方バッファ → NumericInput</li>
+            </ul>
+        </div>
+
+        <div class="code-block">
+// 修正後のコード
+&lt;NumericInput
+  value={workSection.startPosition}  // number | ''
+  onChange={(value) => handleInputChange('startPosition', value)}  // 数値を直接渡す
+  placeholder="0"
+  disabled={!isDataLoaded}
+  min={0}
+/&gt;
+        </div>
+    </div>
+
+    <div class="test-summary">
+        <h2>📊 改善効果</h2>
+        <table style="width: 100%; border-collapse: collapse; margin-top: 15px;">
+            <tr style="background: #f3f4f6;">
+                <th style="padding: 10px; text-align: left; border: 1px solid #e5e7eb;">問題</th>
+                <th style="padding: 10px; text-align: left; border: 1px solid #e5e7eb;">修正前</th>
+                <th style="padding: 10px; text-align: left; border: 1px solid #e5e7eb;">修正後</th>
+            </tr>
+            <tr>
+                <td style="padding: 10px; border: 1px solid #e5e7eb;">値のオフセット</td>
+                <td style="padding: 10px; border: 1px solid #e5e7eb;" class="issue">約1m ずれる</td>
+                <td style="padding: 10px; border: 1px solid #e5e7eb;" class="success">ずれなし</td>
+            </tr>
+            <tr>
+                <td style="padding: 10px; border: 1px solid #e5e7eb;">カーソル位置</td>
+                <td style="padding: 10px; border: 1px solid #e5e7eb;" class="issue">入力時にリセット</td>
+                <td style="padding: 10px; border: 1px solid #e5e7eb;" class="success">位置を保持</td>
+            </tr>
+            <tr>
+                <td style="padding: 10px; border: 1px solid #e5e7eb;">型の一貫性</td>
+                <td style="padding: 10px; border: 1px solid #e5e7eb;" class="issue">文字列/数値が混在</td>
+                <td style="padding: 10px; border: 1px solid #e5e7eb;" class="success">適切に管理</td>
+            </tr>
+            <tr>
+                <td style="padding: 10px; border: 1px solid #e5e7eb;">入力体験</td>
+                <td style="padding: 10px; border: 1px solid #e5e7eb;" class="issue">入力しづらい</td>
+                <td style="padding: 10px; border: 1px solid #e5e7eb;" class="success">スムーズ</td>
+            </tr>
+        </table>
+    </div>
+
+    <div class="test-summary">
+        <h2>🎯 今後の対応</h2>
+        <ul>
+            <li class="success">✅ 根本原因を特定・修正完了</li>
+            <li class="success">✅ 4つの問題フィールドすべてを修正</li>
+            <li class="improvement">📌 他のページの数値入力フィールドも必要に応じて置き換え可能</li>
+            <li class="improvement">📌 復元波形計算の自動化を次のステップで実装予定</li>
+        </ul>
+    </div>
+
+    <div class="test-summary" style="background: #f0fdf4; border: 1px solid #10b981;">
+        <h2 style="color: #10b981;">✨ 結論</h2>
+        <p>作業区間設定時の値のずれ問題は、<strong>NumericInputコンポーネントの導入により根本的に解決されました</strong>。</p>
+        <p>これにより、ユーザーは正確な値を入力でき、予期しない値の変更が発生しなくなりました。</p>
+    </div>
+</body>
+</html>

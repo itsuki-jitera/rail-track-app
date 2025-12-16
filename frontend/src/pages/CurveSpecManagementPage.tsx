@@ -1,5 +1,6 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import axios from 'axios';
+import { useGlobalWorkspace } from '../contexts/GlobalWorkspaceContext';
 
 interface CurveSpec {
   startKP: number;
@@ -25,6 +26,40 @@ export const CurveSpecManagementPage: React.FC = () => {
   const [validationErrors, setValidationErrors] = useState<ValidationError[]>([]);
   const [editingIndex] = useState<number | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const [globalDataLoaded, setGlobalDataLoaded] = useState(false);
+
+  // グローバル状態を使用
+  const { state } = useGlobalWorkspace();
+
+  // グローバル状態から曲線諸元データを読み込む
+  useEffect(() => {
+    // CKデータがグローバル状態にある場合、自動的に読み込む
+    if (state.settings.curveSpecs && state.settings.curveSpecs.length > 0) {
+      const specs = state.settings.curveSpecs.map((spec: any) => ({
+        startKP: spec.startPos / 1000, // m to km
+        endKP: spec.endPos / 1000, // m to km
+        curveType: spec.radius === 0 ? 'straight' : 'circular',
+        radius: spec.radius || null,
+        cant: spec.cant || null,
+        direction: spec.direction || null,
+        label: spec.id || ''
+      }));
+      setCurveSpecs(specs);
+
+      // サマリー計算
+      const summary = {
+        totalCurves: specs.length,
+        straightCount: specs.filter((s: CurveSpec) => s.curveType === 'straight').length,
+        transitionCount: specs.filter((s: CurveSpec) => s.curveType === 'transition').length,
+        circularCount: specs.filter((s: CurveSpec) => s.curveType === 'circular').length,
+        totalLength: specs.reduce((sum: number, s: CurveSpec) => sum + (s.endKP - s.startKP), 0)
+      };
+      setSummary(summary);
+      setGlobalDataLoaded(true);
+
+      console.log('曲線諸元データをグローバル状態から読み込みました:', specs.length, '件');
+    }
+  }, [state.settings.curveSpecs]);
 
   // CSVインポート
   const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -169,6 +204,31 @@ export const CurveSpecManagementPage: React.FC = () => {
       </div>
 
       <div style={{ maxWidth: '1600px', margin: '0 auto' }}>
+        {/* グローバルデータ読込通知 */}
+        {globalDataLoaded && (
+          <div style={{
+            background: '#e8f5e9',
+            border: '2px solid #4caf50',
+            borderRadius: '12px',
+            padding: '16px',
+            marginBottom: '24px',
+            display: 'flex',
+            alignItems: 'center',
+            gap: '12px'
+          }}>
+            <span style={{ fontSize: '24px' }}>✅</span>
+            <div>
+              <div style={{ fontWeight: 'bold', color: '#2e7d32', marginBottom: '4px' }}>
+                キヤデータページからCKデータを自動読込しました
+              </div>
+              <div style={{ fontSize: '14px', color: '#388e3c' }}>
+                {curveSpecs.length}件の曲線諸元データが読み込まれています。
+                CSVインポートで追加データを読み込むか、このまま編集・更新することができます。
+              </div>
+            </div>
+          </div>
+        )}
+
         {/* コントロールパネル */}
         <div style={{
           background: 'white',

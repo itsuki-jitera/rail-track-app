@@ -1,0 +1,372 @@
+/* PositionAlignmentVerification.css */
+
+.position-alignment-verification {
+  background: #f8f9fa;
+  border-radius: 8px;
+  padding: 24px;
+  margin: 20px 0;
+}
+
+/* コントロールパネル */
+.control-panel {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  gap: 20px;
+  margin-bottom: 24px;
+}
+
+.control-section {
+  background: white;
+  border-radius: 6px;
+  padding: 16px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.control-section h4 {
+  margin: 0 0 16px 0;
+  color: #333;
+  font-size: 1.1rem;
+  border-bottom: 2px solid #2196f3;
+  padding-bottom: 8px;
+}
+
+/* 位置調整コントロール */
+.position-controls {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 12px;
+}
+
+.position-controls button {
+  padding: 8px 12px;
+  background: #2196f3;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 0.9rem;
+  transition: background 0.2s;
+}
+
+.position-controls button:hover:not(:disabled) {
+  background: #1976d2;
+}
+
+.position-controls button:disabled {
+  background: #ccc;
+  cursor: not-allowed;
+}
+
+.offset-display {
+  flex: 1;
+  text-align: center;
+  padding: 8px;
+  background: #e3f2fd;
+  border-radius: 4px;
+  min-width: 120px;
+}
+
+.offset-display .label {
+  font-size: 0.85rem;
+  color: #666;
+}
+
+.offset-display .value {
+  font-size: 1.1rem;
+  font-weight: 600;
+  color: #1976d2;
+  margin-left: 4px;
+}
+
+/* 自動位置合わせボタン */
+.auto-align-btn {
+  width: 100%;
+  padding: 10px;
+  background: #4caf50;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  font-size: 1rem;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+.auto-align-btn:hover:not(:disabled) {
+  background: #45a049;
+}
+
+.auto-align-btn:disabled {
+  background: #ccc;
+  cursor: not-allowed;
+}
+
+/* 表示設定 */
+.control-group {
+  margin-bottom: 12px;
+}
+
+.control-group label {
+  display: block;
+  margin-bottom: 4px;
+  font-size: 0.9rem;
+  color: #666;
+}
+
+.control-group select {
+  width: 100%;
+  padding: 8px;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  font-size: 0.95rem;
+}
+
+.control-group.checkbox label {
+  display: flex;
+  align-items: center;
+  cursor: pointer;
+}
+
+.control-group.checkbox input[type="checkbox"] {
+  margin-right: 8px;
+  width: 16px;
+  height: 16px;
+  cursor: pointer;
+}
+
+/* 相関情報表示 */
+.correlation-display {
+  padding: 12px;
+  border-radius: 4px;
+  margin-bottom: 12px;
+  transition: all 0.3s;
+}
+
+.correlation-display.high {
+  background: #c8e6c9;
+  border: 2px solid #4caf50;
+}
+
+.correlation-display.medium {
+  background: #fff3e0;
+  border: 2px solid #ff9800;
+}
+
+.correlation-display.low {
+  background: #ffebee;
+  border: 2px solid #f44336;
+}
+
+.correlation-display .label {
+  font-size: 0.9rem;
+  color: #666;
+}
+
+.correlation-display .value {
+  font-size: 1.2rem;
+  font-weight: bold;
+  margin: 0 8px;
+  color: #333;
+}
+
+.correlation-display .indicator {
+  display: inline-block;
+  padding: 4px 8px;
+  border-radius: 12px;
+  font-size: 0.85rem;
+  font-weight: 500;
+  margin-left: 8px;
+}
+
+.correlation-display.high .indicator {
+  background: #4caf50;
+  color: white;
+}
+
+.correlation-display.medium .indicator {
+  background: #ff9800;
+  color: white;
+}
+
+.correlation-display.low .indicator {
+  background: #f44336;
+  color: white;
+}
+
+/* 測定情報 */
+.measurement-info {
+  background: #f5f5f5;
+  padding: 8px 12px;
+  border-radius: 4px;
+  font-size: 0.9rem;
+}
+
+.measurement-info div {
+  margin: 4px 0;
+  color: #555;
+}
+
+/* チャートコンテナ */
+.chart-container {
+  background: white;
+  border-radius: 6px;
+  padding: 16px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  margin-bottom: 24px;
+}
+
+/* 曲線諸元エディタ */
+.curve-elements-editor {
+  background: white;
+  border-radius: 6px;
+  padding: 20px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.curve-elements-editor h4 {
+  margin: 0 0 16px 0;
+  color: #333;
+  font-size: 1.1rem;
+  border-bottom: 2px solid #4caf50;
+  padding-bottom: 8px;
+}
+
+.curve-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.curve-item {
+  padding: 12px;
+  border: 1px solid #e0e0e0;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.curve-item:hover {
+  background: #f5f5f5;
+  border-color: #2196f3;
+}
+
+.curve-item.selected {
+  background: #e3f2fd;
+  border-color: #2196f3;
+  border-width: 2px;
+}
+
+.curve-info {
+  display: grid;
+  grid-template-columns: auto auto auto auto;
+  gap: 16px;
+  align-items: center;
+}
+
+.curve-info .range {
+  font-weight: 600;
+  color: #333;
+}
+
+.curve-info .radius {
+  background: #e0e0e0;
+  padding: 4px 8px;
+  border-radius: 4px;
+  font-size: 0.9rem;
+}
+
+.curve-info .direction {
+  padding: 4px 8px;
+  border-radius: 12px;
+  font-size: 0.85rem;
+  background: #fff3e0;
+  color: #f57c00;
+}
+
+.curve-info .versine {
+  color: #666;
+  font-size: 0.9rem;
+}
+
+/* 曲線編集フォーム */
+.curve-edit {
+  margin-top: 12px;
+  padding-top: 12px;
+  border-top: 1px solid #e0e0e0;
+  display: flex;
+  gap: 12px;
+}
+
+.curve-edit input[type="number"] {
+  flex: 1;
+  padding: 8px;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  font-size: 0.95rem;
+}
+
+.curve-edit select {
+  flex: 1;
+  padding: 8px;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  font-size: 0.95rem;
+}
+
+/* アニメーション */
+@keyframes pulse {
+  0% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.6;
+  }
+  100% {
+    opacity: 1;
+  }
+}
+
+.auto-align-btn:disabled {
+  animation: pulse 1.5s infinite;
+}
+
+/* レスポンシブ対応 */
+@media (max-width: 768px) {
+  .control-panel {
+    grid-template-columns: 1fr;
+  }
+
+  .position-controls {
+    flex-wrap: wrap;
+  }
+
+  .position-controls button {
+    flex: 1;
+    min-width: 60px;
+  }
+
+  .curve-info {
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
+  }
+
+  .curve-edit {
+    flex-direction: column;
+  }
+}
+
+/* 印刷対応 */
+@media print {
+  .control-panel {
+    display: none;
+  }
+
+  .chart-container {
+    box-shadow: none;
+    border: 1px solid #ddd;
+  }
+
+  .curve-elements-editor {
+    page-break-inside: avoid;
+  }
+}

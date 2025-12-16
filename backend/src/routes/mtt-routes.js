@@ -153,6 +153,92 @@ router.post('/work-section', (req, res) => {
 });
 
 /**
+ * 作業区間のデータを切り取る
+ */
+router.post('/cut-section', (req, res) => {
+  try {
+    const { actualStart, actualEnd, ...workSectionData } = req.body;
+
+    // NaNチェックとデフォルト値の設定（値を確実に数値に変換）
+    let start = parseFloat(actualStart);
+    let end = parseFloat(actualEnd);
+
+    // デフォルト値の設定
+    if (isNaN(start) || start === null || start === undefined) {
+      start = 0;
+    }
+    if (isNaN(end) || end === null || end === undefined || end <= start) {
+      end = start + 1000; // startから最低1000mは確保
+    }
+
+    console.log('cut-section API - リクエスト:', req.body);
+    console.log('cut-section API - actualStart:', actualStart, 'actualEnd:', actualEnd);
+    console.log('cut-section API - 使用する値 start:', start, 'end:', end);
+
+    // 実際の切取り処理（仮実装）
+    // KiyaData型に合わせたデータ構造を返す
+    const interval = 0.25; // 0.25m間隔
+    const length = end - start;
+    const dataPoints = Math.floor(length / interval);
+
+    console.log('cut-section API - 生成するデータ点数:', dataPoints);
+
+    const positions = [];
+    const level = [];
+    const alignment = [];
+    const gauge = [];
+    const crossLevel = [];
+    const cant = [];
+
+    // 仮のデータを生成（実際の測定データのような波形を生成）
+    for (let i = 0; i < dataPoints; i++) {
+      const position = start + i * interval;
+      const phase = (i / dataPoints) * Math.PI * 4; // 波形生成用の位相
+
+      positions.push(position);
+      // より現実的な軌道狂いデータを生成
+      level.push(Math.sin(phase * 0.3) * 2 + Math.random() * 0.5 - 0.25);  // 水準狂い：長周期の正弦波＋ノイズ
+      alignment.push(Math.cos(phase * 0.2) * 1.5 + Math.random() * 0.3 - 0.15);  // 通り狂い
+      gauge.push(1435 + Math.sin(phase * 0.1) * 0.5 + Math.random() * 0.2 - 0.1);  // 軌間
+      crossLevel.push(Math.sin(phase * 0.4) * 1 + Math.random() * 0.2 - 0.1);  // 水準狂い（左右）
+      cant.push(Math.max(0, Math.sin(phase * 0.15) * 10 + 5));  // カント：0以上の値
+    }
+
+    const cutData = {
+      positions: positions,
+      level: level,
+      alignment: alignment,
+      gauge: gauge,
+      crossLevel: crossLevel,
+      cant: cant,
+      dataPoints: dataPoints,
+      wbSections: 0, // WB区間数
+      startPos: start,
+      endPos: end,
+      length: length,
+      status: 'success'
+    };
+
+    console.log('cut-section API - 返却データ:', {
+      dataPoints: cutData.dataPoints,
+      positionsLength: cutData.positions.length,
+      levelLength: cutData.level.length,
+      cantLength: cutData.cant.length,
+      startPos: cutData.startPos,
+      endPos: cutData.endPos
+    });
+
+    res.json({
+      success: true,
+      data: cutData
+    });
+  } catch (error) {
+    console.error('cut-section API エラー:', error);
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
+
+/**
  * 作業区間の検証
  */
 router.post('/work-section/validate', (req, res) => {

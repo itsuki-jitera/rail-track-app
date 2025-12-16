@@ -19,6 +19,12 @@
   z-index: 10;
 }
 
+.toolbar-left {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+}
+
 .toolbar-left h2 {
   margin: 0;
   font-size: 20px;
@@ -26,6 +32,44 @@
   display: flex;
   align-items: center;
   gap: 8px;
+}
+
+/* ツールバーコントロール */
+.toolbar-control-group {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 0 12px;
+  border-left: 1px solid #e2e8f0;
+}
+
+.control-label {
+  font-size: 13px;
+  font-weight: 600;
+  color: #64748b;
+  white-space: nowrap;
+}
+
+.control-select {
+  padding: 4px 8px;
+  border: 1px solid #cbd5e1;
+  border-radius: 6px;
+  font-size: 13px;
+  background: white;
+  color: #1e293b;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.control-select:hover {
+  border-color: #94a3b8;
+  background: #f8fafc;
+}
+
+.control-select:focus {
+  outline: none;
+  border-color: #3b82f6;
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
 }
 
 .toolbar-center {

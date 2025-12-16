@@ -42,7 +42,7 @@ class RestorationFilter {
 
   /**
    * 復元波形計算のメイン関数
-   * @param {number[]} measurementData - 検測データ
+   * @param {number[]|Array<{distance: number, value: number}>} measurementData - 検測データ
    * @param {object} params - パラメータ { lambdaLower, lambdaUpper, dataInterval, dataType }
    * @returns {object} { restoredWaveform, impulseResponse, filterInfo, statistics }
    */
@@ -54,7 +54,32 @@ class RestorationFilter {
       dataType = 'alignment'
     } = params;
 
-    const n = measurementData.length;
+    // measurementDataをnumber[]に変換
+    let dataArray;
+    if (measurementData && measurementData.length > 0) {
+      if (typeof measurementData[0] === 'object' && 'value' in measurementData[0]) {
+        // { distance, value }形式の場合
+        dataArray = measurementData.map(item => item.value || 0);
+        console.log(`測定データを{ distance, value }形式から数値配列に変換しました。データ数: ${dataArray.length}`);
+        console.log(`最初の5つの値: ${dataArray.slice(0, 5).join(', ')}`);
+        console.log(`データの範囲: 最小=${Math.min(...dataArray)}, 最大=${Math.max(...dataArray)}`);
+      } else {
+        // 既に数値配列の場合
+        dataArray = measurementData;
+        console.log(`測定データは既に数値配列です。データ数: ${dataArray.length}`);
+      }
+    } else {
+      console.error('測定データが空です');
+      return {
+        success: false,
+        error: '測定データが空です',
+        restoredWaveform: [],
+        statistics: { mean: 0, sigma: 0, rms: 0, min: 0, max: 0, count: 0 }
+      };
+    }
+
+    const n = dataArray.length;
+    console.log(`処理するデータ点数: ${n}, データ間隔: ${dataInterval}m`);
 
     // 1. インパルス応答の計算
     const impulseResponse = this.calculateImpulseResponse(
@@ -63,15 +88,21 @@ class RestorationFilter {
       lambdaLower,
       lambdaUpper
     );
+    console.log(`インパルス応答計算完了。長さ: ${impulseResponse.length}`);
+    console.log(`インパルス応答の最初の5つ: ${impulseResponse.slice(0, 5).join(', ')}`);
 
     // 2. 復元波形の計算 (畳み込み演算)
     const restoredWaveform = this.applyRestorationFilter(
-      measurementData,
+      dataArray,  // 変換済みの数値配列を使用
       impulseResponse
     );
+    console.log(`復元波形計算完了。長さ: ${restoredWaveform.length}`);
+    console.log(`復元波形の最初の5つ: ${restoredWaveform.slice(0, 5).join(', ')}`);
+    console.log(`復元波形の範囲: 最小=${Math.min(...restoredWaveform)}, 最大=${Math.max(...restoredWaveform)}`);
 
     // 3. 統計情報の計算
     const statistics = this.calculateStatistics(restoredWaveform);
+    console.log(`統計情報: 平均=${statistics.mean.toFixed(3)}, σ=${statistics.sigma.toFixed(3)}, RMS=${statistics.rms.toFixed(3)}`);
 
     // 4. フィルタ情報
     const filterInfo = {

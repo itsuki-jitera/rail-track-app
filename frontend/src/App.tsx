@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import './App.css'
-import Sidebar from './components/Sidebar'
+import SimplifiedSidebar from './components/SimplifiedSidebar'
 import FileUpload from './components/FileUpload'
 import ChartDisplay from './components/ChartDisplay'
 import Statistics from './components/Statistics'
@@ -11,6 +11,11 @@ import MTTResultDisplay from './components/MTTResultDisplay'
 import SpectrumAnalysis from './components/SpectrumAnalysis'
 import CorrectionSettings from './components/CorrectionSettings'
 import OutlierDetection from './components/OutlierDetection'
+
+// ページコンポーネント
+import { WorkflowPage } from './pages/WorkflowPage'
+import { AdvancedModePage } from './pages/AdvancedModePage'
+import { PositionAlignmentPage } from './pages/PositionAlignmentPage'
 import KiyaDataPage from './pages/KiyaDataPage'
 import LegacyDataPage from './pages/LegacyDataPage'
 import DataImportPage from './pages/DataImportPage'
@@ -37,6 +42,7 @@ import { ExportMJPage } from './pages/ExportMJPage'
 import { ExportALCPage } from './pages/ExportALCPage'
 import { ExportGeneralPage } from './pages/ExportGeneralPage'
 import { ReportPage } from './pages/ReportPage'
+import { GlobalWorkspaceProvider } from './contexts/GlobalWorkspaceContext'
 
 export interface TrackData {
   distance: number
@@ -80,8 +86,8 @@ function calculateStatistics(data: TrackData[]) {
 }
 
 function App() {
-  // ページ切り替え
-  const [currentPage, setCurrentPage] = useState<string>('analysis')
+  // ページ切り替え - デフォルトをワークフローに設定
+  const [currentPage, setCurrentPage] = useState<string>('workflow')
 
   // サイドバーの開閉状態
   const [sidebarOpen, setSidebarOpen] = useState(false)
@@ -461,17 +467,33 @@ function App() {
   // ========== JSXレンダー ==========
 
   return (
-    <div className="App">
-      {/* サイドバー */}
-      <Sidebar
-        activeTab={currentPage}
-        onTabChange={setCurrentPage}
-        isOpen={sidebarOpen}
-        onToggle={() => setSidebarOpen(!sidebarOpen)}
-      />
+    <GlobalWorkspaceProvider>
+      <div className="App">
+        {/* サイドバー */}
+        <SimplifiedSidebar
+          activeTab={currentPage}
+          onTabChange={setCurrentPage}
+          isOpen={sidebarOpen}
+          onToggle={() => setSidebarOpen(!sidebarOpen)}
+        />
 
-      {/* メインコンテンツエリア */}
-      <div className="app-with-sidebar">
+        {/* メインコンテンツエリア */}
+        <div className="app-with-sidebar">
+      {/* メインワークフロー画面 */}
+      {currentPage === 'workflow' && (
+        <WorkflowPage />
+      )}
+
+      {/* 上級者向け個別処理モード */}
+      {currentPage === 'advanced-mode' && (
+        <AdvancedModePage onNavigate={setCurrentPage} />
+      )}
+
+      {/* 位置合わせページ */}
+      {currentPage === 'position-alignment' && (
+        <PositionAlignmentPage />
+      )}
+
       {/* データインポートページ */}
       {currentPage === 'import' && (
         <DataImportPage />
@@ -1016,6 +1038,7 @@ function App() {
         </footer>
       </div>
     </div>
+    </GlobalWorkspaceProvider>
   )
 }
 

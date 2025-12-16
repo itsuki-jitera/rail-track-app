@@ -48,15 +48,53 @@ interface ChartDisplayProps {
   restoredData?: TrackData[]
   peaks?: Peak[]
   outliers?: Outlier[]
+  workDirection?: 'forward' | 'backward'  // 作業方向（forward: 下り, backward: 上り）
+  railSide?: 'left' | 'right'  // レール位置（作業方向を向いて左右）
+  dataType?: 'level' | 'alignment'  // データタイプ（高低 or 通り）
+  showKilometer?: boolean  // キロ程表示の有無
+  wbSections?: Array<{ start: number; end: number; type: string }>  // WB区間情報
 }
 
-const ChartDisplay: React.FC<ChartDisplayProps> = ({ originalData, restoredData, peaks, outliers }) => {
-  const labels = originalData.map(d => d.distance.toFixed(1))
+const ChartDisplay: React.FC<ChartDisplayProps> = ({
+  originalData,
+  restoredData,
+  peaks,
+  outliers,
+  workDirection = 'forward',
+  railSide = 'left',
+  dataType = 'level',
+  showKilometer = false,
+  wbSections = []
+}) => {
+  // 作業方向によってデータを反転
+  const processedData = workDirection === 'backward'
+    ? [...originalData].reverse()
+    : originalData;
+
+  const processedRestoredData = restoredData && workDirection === 'backward'
+    ? [...restoredData].reverse()
+    : restoredData;
+
+  const labels = processedData.map(d => {
+    if (showKilometer) {
+      // キロ程表示（データ数 × データ間隔）
+      const km = (d.distance / 1000).toFixed(3);
+      return `${km}km`;
+    }
+    return d.distance.toFixed(1);
+  })
+
+  // レール位置とデータタイプに応じたラベル
+  const getDataLabel = (baseLabel: string) => {
+    const railLabel = railSide === 'left' ? '左レール' : '右レール';
+    const typeLabel = dataType === 'level' ? '高低' : '通り';
+    return `${baseLabel} (${railLabel} - ${typeLabel})`;
+  };
 
   const datasets = [
     {
-      label: '元データ (Original)',
-      data: originalData.map(d => d.irregularity),
+      label: getDataLabel('元データ'),
+      data: processedData.map(d => d.irregularity),
       borderColor: 'rgb(75, 192, 192)',
       backgroundColor: 'rgba(75, 192, 192, 0.5)',
       tension: 0.1,
@@ -65,16 +103,38 @@ const ChartDisplay: React.FC<ChartDisplayProps> = ({ originalData, restoredData,
     }
   ]
 
-  if (restoredData) {
+  if (processedRestoredData) {
     datasets.push({
-      label: '復元データ (Restored)',
-      data: restoredData.map(d => d.irregularity),
+      label: getDataLabel('復元データ'),
+      data: processedRestoredData.map(d => d.irregularity),
       borderColor: 'rgb(255, 99, 132)',
       backgroundColor: 'rgba(255, 99, 132, 0.5)',
       tension: 0.1,
       pointRadius: 2,
       pointHoverRadius: 5,
     })
+  }
+
+  // WB区間のハイライト表示
+  if (wbSections.length > 0) {
+    wbSections.forEach((wb, index) => {
+      const wbData = new Array(processedData.length).fill(null);
+      processedData.forEach((d, i) => {
+        if (d.distance >= wb.start && d.distance <= wb.end) {
+          wbData[i] = 0;  // WB区間を0レベルで表示
+        }
+      });
+      datasets.push({
+        label: `WB区間 ${index + 1}`,
+        data: wbData,
+        borderColor: 'rgba(255, 165, 0, 0.5)',
+        backgroundColor: 'rgba(255, 165, 0, 0.2)',
+        fill: true,
+        tension: 0,
+        pointRadius: 0,
+        pointHoverRadius: 0,
+      } as any);
+    });
   }
 
   // ピーク（極大値）のプロット
@@ -138,6 +198,23 @@ const ChartDisplay: React.FC<ChartDisplayProps> = ({ originalData, restoredData,
     datasets
   }
 
+  // チャートタイトルの設定
+  const getChartTitle = () => {
+    const directionText = workDirection === 'forward' ? '下り方向' : '上り方向';
+    const railText = railSide === 'left' ? '左レール' : '右レール';
+    const typeText = dataType === 'level' ? '高低狂い（横から見た視点）' : '通り狂い（上から見た視点）';
+    return `${typeText} - ${railText} [${directionText}]`;
+  };
+
+  // Y軸ラベルの設定（データタイプに応じて変更）
+  const getYAxisLabel = () => {
+    if (dataType === 'level') {
+      return '高低狂い量 (mm) ↑上方向';
+    } else {
+      return '通り狂い量 (mm) ←左 | 右→';
+    }
+  };
+
   const options = {
     responsive: true,
     maintainAspectRatio: false,
@@ -147,7 +224,7 @@ const ChartDisplay: React.FC<ChartDisplayProps> = ({ originalData, restoredData,
       },
       title: {
         display: true,
-        text: '軌道狂い量の推移 (Track Irregularity)',
+        text: getChartTitle(),
         font: {
           size: 16
         }
@@ -160,17 +237,40 @@ const ChartDisplay: React.FC<ChartDisplayProps> = ({ originalData, restoredData,
               label += ': '
             }
             label += context.parsed.y.toFixed(2) + ' mm'
+
+            // WB区間の場合は追加情報を表示
+            if (label.includes('WB区間')) {
+              return label + ' (橋梁/トンネル等)';
+            }
             return label
           }
         }
-      }
+      },
+      annotation: wbSections.length > 0 ? {
+        annotations: wbSections.map((wb, index) => ({
+          type: 'box' as const,
+          xMin: wb.start,
+          xMax: wb.end,
+          backgroundColor: 'rgba(255, 165, 0, 0.1)',
+          borderColor: 'rgba(255, 165, 0, 0.3)',
+          borderWidth: 1,
+          label: {
+            display: true,
+            content: `WB${index + 1}`,
+            position: 'start' as const,
+          }
+        }))
+      } : undefined
     },
     scales: {
       x: {
         title: {
           display: true,
-          text: '距離 (m)'
+          text: showKilometer
+            ? `キロ程 (km) ${workDirection === 'forward' ? '→' : '←'} ${workDirection === 'forward' ? '下り方向' : '上り方向'}`
+            : `距離 (m) ${workDirection === 'forward' ? '→' : '←'} ${workDirection === 'forward' ? '下り方向' : '上り方向'}`
         },
+        reverse: workDirection === 'backward',  // 上り方向の場合はX軸を反転
         ticks: {
           maxTicksLimit: 20
         }
@@ -178,7 +278,17 @@ const ChartDisplay: React.FC<ChartDisplayProps> = ({ originalData, restoredData,
       y: {
         title: {
           display: true,
-          text: '軌道狂い量 (mm)'
+          text: getYAxisLabel()
+        },
+        // 通り狂いの場合、正の値を右、負の値を左として表示
+        grid: {
+          drawBorder: true,
+          color: (context: any) => {
+            if (dataType === 'alignment' && context.tick.value === 0) {
+              return 'rgba(0, 0, 0, 0.5)';  // ゼロラインを強調
+            }
+            return 'rgba(0, 0, 0, 0.1)';
+          }
         }
       }
     }

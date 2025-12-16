@@ -1,0 +1,412 @@
+/* VerticalCurveElementInput.css */
+
+.vertical-curve-element-input {
+  background: #f8f9fa;
+  border-radius: 8px;
+  padding: 24px;
+  margin: 20px 0;
+}
+
+/* ヘッダー */
+.input-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 24px;
+  padding-bottom: 16px;
+  border-bottom: 2px solid #e0e0e0;
+}
+
+.input-header h3 {
+  margin: 0;
+  color: #333;
+  font-size: 1.5rem;
+}
+
+.header-info {
+  display: flex;
+  gap: 20px;
+  align-items: center;
+}
+
+.chord-info {
+  padding: 6px 12px;
+  background: #673ab7;
+  color: white;
+  border-radius: 4px;
+  font-weight: 500;
+  font-size: 0.9rem;
+}
+
+.show-toggle {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  cursor: pointer;
+  font-size: 0.95rem;
+  color: #555;
+}
+
+.show-toggle input[type="checkbox"] {
+  width: 18px;
+  height: 18px;
+  cursor: pointer;
+}
+
+/* 縦曲線入力フォーム */
+.curve-input-form,
+.gradient-input-form {
+  background: white;
+  border-radius: 6px;
+  padding: 20px;
+  margin-bottom: 20px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.curve-input-form h4,
+.gradient-input-form h4 {
+  margin: 0 0 16px 0;
+  color: #555;
+  font-size: 1.1rem;
+  padding-bottom: 8px;
+  border-bottom: 1px solid #e0e0e0;
+}
+
+.form-row {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+  gap: 16px;
+  margin-bottom: 16px;
+}
+
+.form-field {
+  display: flex;
+  flex-direction: column;
+}
+
+.form-field label {
+  font-size: 0.9rem;
+  color: #666;
+  margin-bottom: 4px;
+  font-weight: 500;
+}
+
+.form-field input,
+.form-field select {
+  padding: 8px 12px;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  font-size: 1rem;
+  transition: border-color 0.2s;
+}
+
+.form-field input:focus,
+.form-field select:focus {
+  outline: none;
+  border-color: #673ab7;
+  box-shadow: 0 0 0 2px rgba(103, 58, 183, 0.1);
+}
+
+.field-error {
+  color: #f44336;
+  font-size: 0.85rem;
+  margin-top: 4px;
+}
+
+.form-error {
+  color: #f44336;
+  padding: 8px 12px;
+  background: #ffebee;
+  border-radius: 4px;
+  margin-bottom: 16px;
+  border-left: 3px solid #f44336;
+}
+
+/* ボタン */
+.btn-add-curve,
+.btn-add-gradient {
+  padding: 10px 24px;
+  background: #673ab7;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  font-size: 1rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+.btn-add-curve:hover,
+.btn-add-gradient:hover {
+  background: #5e35b1;
+}
+
+.btn-add-gradient {
+  background: #3f51b5;
+}
+
+.btn-add-gradient:hover {
+  background: #303f9f;
+}
+
+/* チャートコンテナ */
+.chart-container {
+  background: white;
+  border-radius: 6px;
+  padding: 20px;
+  margin: 20px 0;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+/* 縦曲線リスト */
+.curves-list,
+.gradient-list {
+  background: white;
+  border-radius: 6px;
+  padding: 20px;
+  margin-bottom: 20px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.curves-list h4,
+.gradient-list h4 {
+  margin: 0 0 16px 0;
+  color: #555;
+  font-size: 1.1rem;
+  padding-bottom: 8px;
+  border-bottom: 1px solid #e0e0e0;
+}
+
+.no-curves {
+  text-align: center;
+  padding: 40px;
+  color: #999;
+  font-style: italic;
+}
+
+.curve-items,
+.gradient-items {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+/* 縦曲線アイテム */
+.curve-item {
+  padding: 14px;
+  border: 1px solid #e0e0e0;
+  border-radius: 6px;
+  background: white;
+  cursor: pointer;
+  transition: all 0.2s;
+  position: relative;
+}
+
+.curve-item:hover {
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  border-color: #673ab7;
+}
+
+.curve-item.selected {
+  background: #ede7f6;
+  border-color: #673ab7;
+  border-width: 2px;
+}
+
+/* 凸型/凹型の色分け */
+.curve-item.convex {
+  border-left: 4px solid #ff9800;
+}
+
+.curve-item.concave {
+  border-left: 4px solid #2196f3;
+}
+
+.curve-info {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  align-items: center;
+}
+
+.curve-range {
+  font-weight: 600;
+  color: #333;
+  font-size: 1rem;
+  min-width: 200px;
+}
+
+.curve-radius {
+  padding: 4px 8px;
+  background: #e0e0e0;
+  border-radius: 4px;
+  font-size: 0.9rem;
+}
+
+.curve-type {
+  padding: 4px 8px;
+  border-radius: 12px;
+  font-size: 0.85rem;
+  font-weight: 500;
+}
+
+.curve-type.convex {
+  background: #fff3e0;
+  color: #f57c00;
+}
+
+.curve-type.concave {
+  background: #e3f2fd;
+  color: #1976d2;
+}
+
+.curve-gradients {
+  color: #666;
+  font-size: 0.9rem;
+  font-style: italic;
+}
+
+.btn-delete-curve {
+  position: absolute;
+  top: 14px;
+  right: 14px;
+  padding: 6px 16px;
+  background: #f44336;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  font-size: 0.9rem;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+.btn-delete-curve:hover {
+  background: #d32f2f;
+}
+
+/* 勾配区間アイテム */
+.gradient-item {
+  padding: 12px;
+  border: 1px solid #e0e0e0;
+  border-radius: 6px;
+  background: white;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.gradient-range {
+  font-weight: 500;
+  color: #333;
+}
+
+.gradient-value {
+  padding: 4px 12px;
+  border-radius: 12px;
+  font-size: 0.9rem;
+  font-weight: 500;
+}
+
+.gradient-value.upward {
+  background: #ffebee;
+  color: #c62828;
+}
+
+.gradient-value.downward {
+  background: #e3f2fd;
+  color: #1565c0;
+}
+
+/* レスポンシブ対応 */
+@media (max-width: 1024px) {
+  .form-row {
+    grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+  }
+}
+
+@media (max-width: 768px) {
+  .input-header {
+    flex-direction: column;
+    gap: 16px;
+    align-items: flex-start;
+  }
+
+  .header-info {
+    width: 100%;
+    justify-content: space-between;
+  }
+
+  .form-row {
+    grid-template-columns: 1fr 1fr;
+  }
+
+  .curve-info {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .curve-range {
+    min-width: auto;
+  }
+
+  .btn-delete-curve {
+    position: static;
+    margin-top: 12px;
+    width: 100%;
+  }
+}
+
+@media (max-width: 480px) {
+  .form-row {
+    grid-template-columns: 1fr;
+  }
+
+  .header-info {
+    flex-direction: column;
+    gap: 8px;
+    align-items: flex-start;
+  }
+
+  .gradient-item {
+    flex-direction: column;
+    gap: 8px;
+    align-items: flex-start;
+  }
+}
+
+/* アニメーション */
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.curve-item,
+.gradient-item {
+  animation: fadeIn 0.3s ease-out;
+}
+
+/* 印刷対応 */
+@media print {
+  .header-info,
+  .curve-input-form,
+  .gradient-input-form,
+  .btn-delete-curve {
+    display: none;
+  }
+
+  .curve-item,
+  .gradient-item {
+    page-break-inside: avoid;
+  }
+
+  .chart-container {
+    page-break-before: auto;
+    page-break-after: auto;
+  }
+}

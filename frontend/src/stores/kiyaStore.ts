@@ -30,7 +30,7 @@ interface KiyaState {
   uploadKiyaFile: (file: File) => Promise<void>
 }
 
-const API_BASE_URL = 'http://localhost:3002/api'
+const API_BASE_URL = 'http://localhost:3003/api'
 
 export const useKiyaStore = create<KiyaState>((set, get) => ({
   // 初期状態

@@ -38,7 +38,7 @@ const SpectrumAnalysis: React.FC<SpectrumAnalysisProps> = ({ data, onClose }) =>
     setError(null)
 
     try {
-      const response = await fetch('http://localhost:3002/api/analyze-spectrum', {
+      const response = await fetch('http://localhost:3003/api/analyze-spectrum', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ data }),

@@ -30,7 +30,7 @@ const OutlierDetection: React.FC<OutlierDetectionProps> = ({ data, onOutliersDet
     setError(null)
 
     try {
-      const response = await fetch('http://localhost:3002/api/detect-outliers', {
+      const response = await fetch('http://localhost:3003/api/detect-outliers', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({

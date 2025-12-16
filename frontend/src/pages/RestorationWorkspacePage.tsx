@@ -1,188 +1,112 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import axios from 'axios';
-import { WaveformChart } from '../components/WaveformChart';
-import { InteractivePlanLineEditor } from '../components/InteractivePlanLineEditor';
 import { PresetButtons, StandardButton } from '../components/StandardButton';
-
-interface CurveSpec {
-  startKP: number;
-  endKP: number;
-  curveType: 'straight' | 'transition' | 'circular';
-  radius?: number;
-  cant?: number;
-  direction?: 'left' | 'right';
-  label?: string;
-  length?: number;
-}
+import { useGlobalWorkspace } from '../contexts/GlobalWorkspaceContext';
+import { apiConfig } from '../config/api';
 
 export const RestorationWorkspacePage: React.FC = () => {
   const [file, setFile] = useState<File | null>(null);
   const [restorationResult, setRestorationResult] = useState<any>(null);
-  const [planLine, setPlanLine] = useState<number[] | null>(null);
-  const [movementResult, setMovementResult] = useState<any>(null);
   const [loading, setLoading] = useState(false);
 
   const [dataType, setDataType] = useState<string>('alignment');
   const [lambdaLower, setLambdaLower] = useState<number>(6.0);
   const [lambdaUpper, setLambdaUpper] = useState<number>(100.0);
 
-  // 曲線諸元データ管理
-  const [curveSpecs, setCurveSpecs] = useState<CurveSpec[]>([]);
-  const [curveSpecFile, setCurveSpecFile] = useState<File | null>(null);
-  const [useCurveSpecs, setUseCurveSpecs] = useState<boolean>(false);
-  const [curveSpecSummary, setCurveSpecSummary] = useState<any>(null);
-  const [curveSectionStats, setCurveSectionStats] = useState<any>(null);
+  // グローバル状態を使用
+  const { state, dispatch } = useGlobalWorkspace();
 
-  // 曲線諸元CSVインポート
-  const handleImportCurveSpecs = async () => {
-    if (!curveSpecFile) return;
-    setLoading(true);
+  // データ保存済みかどうかのフラグ
+  const [dataSaved, setDataSaved] = useState(false);
 
-    try {
-      const formData = new FormData();
-      formData.append('file', curveSpecFile);
-
-      const response = await axios.post('http://localhost:3002/api/curve-spec/import', formData);
-
-      if (response.data.success) {
-        setCurveSpecs(response.data.curveSpecs);
-        setCurveSpecSummary(response.data.summary);
-        setUseCurveSpecs(true);
-        alert(`✓ ${response.data.message}`);
-      }
-    } catch (error: any) {
-      console.error('Curve spec import error:', error);
-      alert('曲線諸元インポートエラー: ' + (error.response?.data?.error || error.message));
+  // 復元波形計算（グローバルデータ使用版）
+  const handleCalculateRestorationFromGlobal = async () => {
+    if (!state.originalData.cutData && !state.originalData.mttData) {
+      alert('グローバル状態に利用可能なデータがありません。キヤデータページでファイルをアップロードしてください。');
+      return;
     }
 
-    setLoading(false);
-  };
-
-  // APIから曲線諸元を取得
-  const handleLoadCurveSpecsFromAPI = async () => {
     setLoading(true);
 
     try {
-      const response = await axios.get('http://localhost:3002/api/curve-spec/list');
+      // 優先順位: 1. cutData（切取済みデータ）、2. mttData（生データ）
+      let measurementData;
 
-      if (response.data.success && response.data.curveSpecs.length > 0) {
-        setCurveSpecs(response.data.curveSpecs);
-        setCurveSpecSummary(response.data.summary);
-        setUseCurveSpecs(true);
-        alert(`✓ ${response.data.curveSpecs.length}件の曲線諸元を読み込みました`);
-      } else {
-        alert('曲線諸元データが登録されていません');
+      if (state.originalData.cutData) {
+        // 切取済みデータを優先使用
+        if (state.originalData.cutData.level && Array.isArray(state.originalData.cutData.level)) {
+          const levelArray = state.originalData.cutData.level;
+          const dataInterval = 0.25;
+          measurementData = levelArray.map((value, index) => ({
+            distance: index * dataInterval,
+            value: value
+          }));
+          console.log('切取済みデータ（cutData.level）を使用します:', measurementData.length, '点');
+        } else {
+          console.error('cutDataの形式が正しくありません:', state.originalData.cutData);
+          alert('データ形式エラー: 切取済みデータの形式が正しくありません');
+          setLoading(false);
+          return;
+        }
+      } else if (state.originalData.mttData?.rawData) {
+        // MTTデータの生データを使用
+        let rawDataArray;
+        if (Array.isArray(state.originalData.mttData.rawData)) {
+          rawDataArray = state.originalData.mttData.rawData;
+          console.log('MTTデータ（生データ）を使用します:', rawDataArray.length, '点');
+        } else if (state.originalData.mttData.rawData.level) {
+          rawDataArray = state.originalData.mttData.rawData.level;
+          console.log('MTTデータ（rawData.level）を使用します:', rawDataArray.length, '点');
+        } else {
+          console.error('MTTデータの形式が正しくありません:', state.originalData.mttData.rawData);
+          alert('データ形式エラー: MTTデータの形式が正しくありません');
+          setLoading(false);
+          return;
+        }
+        const dataInterval = 0.25;
+        measurementData = rawDataArray.map((value, index) => ({
+          distance: index * dataInterval,
+          value: value
+        }));
       }
-    } catch (error: any) {
-      console.error('Curve spec load error:', error);
-      alert('曲線諸元読み込みエラー: ' + (error.response?.data?.error || error.message));
-    }
 
-    setLoading(false);
-  };
-
-  // 曲線諸元をクリア
-  const handleClearCurveSpecs = () => {
-    setCurveSpecs([]);
-    setCurveSpecFile(null);
-    setCurveSpecSummary(null);
-    setUseCurveSpecs(false);
-  };
-
-  // 曲線諸元から計画線を自動生成
-  const handleAutoGeneratePlanFromCurves = async () => {
-    if (!restorationResult || curveSpecs.length === 0) return;
-    setLoading(true);
-
-    try {
-      const response = await axios.post('http://localhost:3002/api/restoration/vb6/auto-plan-from-curves', {
-        restoredWaveform: restorationResult.restoredWaveform,
-        curveSpecs,
-        dataInterval: 0.25,
-        startKP: 0
+      const response = await axios.post(`${apiConfig.baseURL}/api/restoration/vb6/calculate`, {
+        measurementData,
+        filterParams: {
+          lambdaLower,
+          lambdaUpper,
+          dataInterval: 0.25,
+          dataType
+        }
       });
 
-      if (response.data.success) {
-        setPlanLine(response.data.planLine);
-        alert(`✓ ${response.data.message}\n\n統計情報:\n最小値: ${response.data.statistics.min.toFixed(2)}mm\n最大値: ${response.data.statistics.max.toFixed(2)}mm\n平均値: ${response.data.statistics.mean.toFixed(2)}mm`);
+      setRestorationResult(response.data);
 
-        // 移動量を再計算
-        await handlePlanLineChange(response.data.planLine);
-      }
-    } catch (error: any) {
-      console.error('Auto plan generation error:', error);
-      alert('自動計画線生成エラー: ' + (error.response?.data?.error || error.message));
-    }
-
-    setLoading(false);
-  };
-
-  // 曲線区間ごとの統計分析
-  const handleCalculateCurveSectionStats = async () => {
-    if (!restorationResult || curveSpecs.length === 0) return;
-    setLoading(true);
-
-    try {
-      const response = await axios.post('http://localhost:3002/api/restoration/vb6/curve-section-statistics', {
-        restoredWaveform: restorationResult.restoredWaveform,
-        movement: movementResult?.movement,
-        curveSpecs,
-        dataInterval: 0.25,
-        startKP: 0
+      // グローバル状態に復元波形を保存
+      dispatch({
+        type: 'CALCULATE_RESTORED_WAVEFORM',
+        payload: {
+          positions: measurementData.map(d => d.distance),
+          level: response.data.restoredWaveform,
+          alignment: [],  // 後で実装
+          calculatedAt: new Date(),
+          method: 'standard'
+        }
       });
 
-      if (response.data.success) {
-        setCurveSectionStats(response.data);
-        alert(`✓ ${response.data.message}`);
-      }
+      // ワークフロー状態は SET_RESTORED_WAVEFORM で自動的に更新される
+
+      setDataSaved(true);
+      alert('✓ 復元波形計算が完了し、データが保存されました');
     } catch (error: any) {
-      console.error('Curve section statistics error:', error);
-      alert('曲線区間統計分析エラー: ' + (error.response?.data?.error || error.message));
+      console.error('復元波形計算エラー詳細:', error);
+      alert(`復元波形計算エラーが発生しました: ${error.response?.data?.error || error.message}`);
     }
 
     setLoading(false);
   };
 
-  // 曲線諸元レポート生成
-  const handleGenerateCurveReport = async (reportType: string) => {
-    if (!restorationResult) return;
-    setLoading(true);
-
-    try {
-      const response = await axios.post('http://localhost:3002/api/restoration/vb6/generate-curve-report', {
-        restoredWaveform: restorationResult.restoredWaveform,
-        planLine: planLine || [],
-        movement: movementResult?.movement || [],
-        curveSpecs: curveSpecs.length > 0 ? curveSpecs : undefined,
-        curveSectionStats: curveSectionStats,
-        dataInterval: 0.25,
-        startKP: 0,
-        reportType
-      }, {
-        responseType: 'blob'
-      });
-
-      // CSVファイルをダウンロード
-      const blob = new Blob([response.data], { type: 'text/csv;charset=utf-8;' });
-      const url = window.URL.createObjectURL(blob);
-      const link = document.createElement('a');
-      link.href = url;
-      link.setAttribute('download', `curve_report_${Date.now()}.csv`);
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
-      window.URL.revokeObjectURL(url);
-
-      alert('✓ レポートをダウンロードしました');
-    } catch (error: any) {
-      console.error('Report generation error:', error);
-      alert('レポート生成エラー: ' + (error.response?.data?.error || error.message));
-    }
-
-    setLoading(false);
-  };
-
-  // 復元波形計算
+  // 復元波形計算（ファイルアップロード版）
   const handleCalculateRestoration = async () => {
     if (!file) return;
     setLoading(true);
@@ -190,9 +114,9 @@ export const RestorationWorkspacePage: React.FC = () => {
     try {
       const formData = new FormData();
       formData.append('file', file);
-      const uploadRes = await axios.post('http://localhost:3002/api/upload', formData);
+      const uploadRes = await axios.post(`${apiConfig.baseURL}/api/upload`, formData);
 
-      const response = await axios.post('http://localhost:3002/api/restoration/vb6/calculate', {
+      const response = await axios.post(`${apiConfig.baseURL}/api/restoration/vb6/calculate`, {
         measurementData: uploadRes.data.data,
         filterParams: {
           lambdaLower,
@@ -204,20 +128,22 @@ export const RestorationWorkspacePage: React.FC = () => {
 
       setRestorationResult(response.data);
 
-      // 初期計画線を移動平均で生成
-      const planLineResponse = await axios.post('http://localhost:3002/api/restoration/generate-plan-line', {
-        restoredWaveform: response.data.restoredWaveform,
-        windowSize: 800
+      // グローバル状態に復元波形を保存
+      dispatch({
+        type: 'CALCULATE_RESTORED_WAVEFORM',
+        payload: {
+          positions: measurementData.map(d => d.distance),
+          level: response.data.restoredWaveform,
+          alignment: [],  // 後で実装
+          calculatedAt: new Date(),
+          method: 'standard'
+        }
       });
 
-      if (planLineResponse.data.success) {
-        setPlanLine(planLineResponse.data.planLine);
-      } else {
-        // フォールバック: 0mm直線
-        const initialPlan = new Array(response.data.restoredWaveform.length).fill(0);
-        setPlanLine(initialPlan);
-      }
+      // ワークフロー状態は SET_RESTORED_WAVEFORM で自動的に更新される
 
+      setDataSaved(true);
+      alert('✓ 復元波形計算が完了し、データが保存されました');
     } catch (error) {
       console.error(error);
       alert('復元波形計算エラーが発生しました');
@@ -226,244 +152,219 @@ export const RestorationWorkspacePage: React.FC = () => {
     setLoading(false);
   };
 
-  // 計画線変更時の移動量再計算
-  const handlePlanLineChange = async (newPlanLine: number[]) => {
-    if (!restorationResult) return;
 
-    setPlanLine(newPlanLine);
-
-    try {
-      const response = await axios.post('http://localhost:3002/api/restoration/vb6/movement', {
-        restoredWaveform: restorationResult.restoredWaveform,
-        planLine: newPlanLine,
-        restrictions: {
-          standard: 30,
-          maximum: 50
-        }
+  // リセット
+  const handleReset = () => {
+    if (confirm('現在の計算結果をクリアして、最初からやり直しますか？')) {
+      setRestorationResult(null);
+      setFile(null);
+      setDataSaved(false);
+      dispatch({
+        type: 'CLEAR_RESTORED_WAVEFORM'
       });
-
-      setMovementResult(response.data);
-    } catch (error) {
-      console.error('移動量計算エラー:', error);
     }
   };
 
   return (
     <div style={{
       minHeight: '100vh',
-      background: 'linear-gradient(135deg, #f9fafb, #f3f4f6)',
+      background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
       padding: '24px'
     }}>
       {/* ヘッダー */}
       <div style={{
-        maxWidth: '1600px',
+        maxWidth: '1200px',
         margin: '0 auto 24px auto',
         textAlign: 'center'
       }}>
-        <h1 style={{ margin: '0 0 12px 0', fontSize: '32px', fontWeight: 700, color: '#1f2937' }}>
-          復元波形整正ワークスペース
+        <h1 style={{ margin: '0 0 12px 0', fontSize: '32px', fontWeight: 700, color: 'white' }}>
+          ⚙️ 復元波形計算
         </h1>
-        <p style={{ margin: 0, fontSize: '15px', color: '#6b7280' }}>
-          VB6 KCDW相当 - 復元波形計算・計画線編集・移動量算出
+        <p style={{ margin: 0, fontSize: '15px', color: 'rgba(255, 255, 255, 0.9)' }}>
+          測定データから復元波形を計算します（VB6 KANA3相当）
         </p>
       </div>
 
-      <div style={{ maxWidth: '1600px', margin: '0 auto' }}>
-        {/* 曲線諸元データ読み込みセクション */}
-        {!restorationResult && (
+      <div style={{ maxWidth: '1200px', margin: '0 auto' }}>
+        {/* 計算前の画面 */}
+        {!restorationResult ? (
           <div style={{
             background: 'white',
             borderRadius: '12px',
-            padding: '24px',
-            marginBottom: '24px',
-            border: '2px solid #e0f2fe'
+            padding: '32px',
+            boxShadow: '0 10px 40px rgba(0, 0, 0, 0.1)'
           }}>
-            <h3 style={{ margin: '0 0 20px 0', color: '#1f2937' }}>曲線諸元データ（オプション）</h3>
+            <h3 style={{ margin: '0 0 24px 0', color: '#1f2937', fontSize: '20px' }}>
+              復元波形計算パラメータ設定
+            </h3>
 
-            {/* 曲線諸元が読み込まれている場合 */}
-            {curveSpecs.length > 0 && (
+            {/* グローバルデータ利用可能通知 */}
+            {(state.originalData.cutData || state.originalData.mttData) && (
               <div style={{
-                background: '#f0fdf4',
-                border: '2px solid #10b981',
+                background: '#e8f5e9',
+                border: '2px solid #4caf50',
                 borderRadius: '8px',
-                padding: '16px',
-                marginBottom: '16px'
+                padding: '20px',
+                marginBottom: '24px'
               }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
                   <div>
-                    <div style={{ fontWeight: 700, color: '#065f46', marginBottom: '8px' }}>
-                      ✓ 曲線諸元データ読み込み済み
+                    <div style={{ fontWeight: 700, color: '#2e7d32', marginBottom: '8px', fontSize: '18px' }}>
+                      ✅ キヤデータページの測定データを利用可能
                     </div>
-                    {curveSpecSummary && (
-                      <div style={{ fontSize: '14px', color: '#065f46' }}>
-                        合計 {curveSpecSummary.totalCurves} 区間
-                        （直線: {curveSpecSummary.straightCount}、
-                        緩和曲線: {curveSpecSummary.transitionCount}、
-                        円曲線: {curveSpecSummary.circularCount}）
-                      </div>
-                    )}
-                  </div>
-                  <div>
-                    <label style={{ display: 'flex', alignItems: 'center', cursor: 'pointer' }}>
-                      <input
-                        type="checkbox"
-                        checked={useCurveSpecs}
-                        onChange={(e) => setUseCurveSpecs(e.target.checked)}
-                        style={{ marginRight: '8px', width: '18px', height: '18px' }}
-                      />
-                      <span style={{ fontWeight: 600, color: '#065f46' }}>波形チャートに表示</span>
-                    </label>
+                    <div style={{ fontSize: '14px', color: '#388e3c' }}>
+                      {state.originalData.cutData
+                        ? `切取済みデータ（${state.originalData.cutData.level?.length || 0}点）が利用できます`
+                        : `O010ファイル（MTTデータ）が利用できます`}
+                    </div>
                   </div>
                 </div>
-                <StandardButton
-                  onClick={handleClearCurveSpecs}
-                  label="曲線諸元をクリア"
-                  type="danger"
-                  size="small"
-                  style={{ marginTop: '12px' }}
-                />
               </div>
             )}
 
-            {/* 曲線諸元が読み込まれていない場合 */}
-            {curveSpecs.length === 0 && (
+            {/* パラメータ設定 */}
+            <div style={{
+              display: 'grid',
+              gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))',
+              gap: '20px',
+              marginBottom: '32px'
+            }}>
               <div>
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px', marginBottom: '16px' }}>
-                  {/* CSVファイルからインポート */}
-                  <div style={{
-                    border: '2px dashed #d1d5db',
-                    borderRadius: '8px',
-                    padding: '20px',
-                    textAlign: 'center'
-                  }}>
-                    <div style={{ fontWeight: 600, marginBottom: '12px', color: '#374151' }}>
-                      CSVファイルからインポート
-                    </div>
-                    <input
-                      type="file"
-                      accept=".csv"
-                      onChange={(e) => setCurveSpecFile(e.target.files?.[0] || null)}
-                      style={{ marginBottom: '12px', fontSize: '13px' }}
-                    />
-                    <PresetButtons.Import
-                      onClick={handleImportCurveSpecs}
-                      disabled={!curveSpecFile || loading}
-                      fullWidth
-                    />
-                  </div>
-
-                  {/* APIから取得 */}
-                  <div style={{
-                    border: '2px dashed #d1d5db',
-                    borderRadius: '8px',
-                    padding: '20px',
-                    textAlign: 'center'
-                  }}>
-                    <div style={{ fontWeight: 600, marginBottom: '12px', color: '#374151' }}>
-                      登録済みデータから取得
-                    </div>
-                    <p style={{ fontSize: '13px', color: '#6b7280', marginBottom: '16px' }}>
-                      曲線諸元管理ページで登録したデータを読み込みます
-                    </p>
-                    <StandardButton
-                      onClick={handleLoadCurveSpecsFromAPI}
-                      disabled={loading}
-                      label="APIから取得"
-                      type="success"
-                      fullWidth
-                    />
-                  </div>
-                </div>
-
-                <div style={{
-                  background: '#f3f4f6',
-                  padding: '12px',
-                  borderRadius: '6px',
-                  fontSize: '13px',
-                  color: '#6b7280'
-                }}>
-                  ℹ️ 曲線諸元データは省略可能です。読み込むと波形チャートに曲線区間が表示されます。
-                </div>
-              </div>
-            )}
-          </div>
-        )}
-
-        {/* ステップ1: ファイルアップロードと復元波形計算 */}
-        {!restorationResult && (
-          <div style={{
-            background: 'white',
-            borderRadius: '12px',
-            padding: '24px',
-            marginBottom: '24px'
-          }}>
-            <h3 style={{ margin: '0 0 20px 0', color: '#1f2937' }}>ステップ1: 復元波形計算</h3>
-
-            <div style={{ marginBottom: '16px' }}>
-              <label style={{ display: 'block', marginBottom: '8px', fontWeight: 600 }}>
-                検測データファイル (CSV):
-              </label>
-              <input
-                type="file"
-                accept=".csv"
-                onChange={(e) => setFile(e.target.files?.[0] || null)}
-                style={{ padding: '8px' }}
-              />
-            </div>
-
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '16px', marginBottom: '20px' }}>
-              <div>
-                <label style={{ display: 'block', marginBottom: '8px', fontWeight: 600 }}>
+                <label style={{ display: 'block', marginBottom: '8px', fontWeight: 600, color: '#374151' }}>
                   データタイプ:
                 </label>
                 <select
                   value={dataType}
                   onChange={(e) => setDataType(e.target.value)}
-                  style={{ width: '100%', padding: '8px', borderRadius: '6px', border: '1px solid #d1d5db' }}
+                  style={{
+                    width: '100%',
+                    padding: '10px',
+                    borderRadius: '6px',
+                    border: '2px solid #d1d5db',
+                    fontSize: '14px'
+                  }}
                 >
                   <option value="alignment">通り</option>
                   <option value="level">高低</option>
+                  <option value="crossLevel">水準</option>
+                  <option value="twist">平面性</option>
                 </select>
               </div>
 
               <div>
-                <label style={{ display: 'block', marginBottom: '8px', fontWeight: 600 }}>
+                <label style={{ display: 'block', marginBottom: '8px', fontWeight: 600, color: '#374151' }}>
                   復元波長下限 (m):
                 </label>
                 <input
                   type="number"
                   value={lambdaLower}
                   onChange={(e) => setLambdaLower(Number(e.target.value))}
-                  style={{ width: '100%', padding: '8px', borderRadius: '6px', border: '1px solid #d1d5db' }}
+                  style={{
+                    width: '100%',
+                    padding: '10px',
+                    borderRadius: '6px',
+                    border: '2px solid #d1d5db',
+                    fontSize: '14px'
+                  }}
                 />
               </div>
 
               <div>
-                <label style={{ display: 'block', marginBottom: '8px', fontWeight: 600 }}>
+                <label style={{ display: 'block', marginBottom: '8px', fontWeight: 600, color: '#374151' }}>
                   復元波長上限 (m):
                 </label>
                 <input
                   type="number"
                   value={lambdaUpper}
                   onChange={(e) => setLambdaUpper(Number(e.target.value))}
-                  style={{ width: '100%', padding: '8px', borderRadius: '6px', border: '1px solid #d1d5db' }}
+                  style={{
+                    width: '100%',
+                    padding: '10px',
+                    borderRadius: '6px',
+                    border: '2px solid #d1d5db',
+                    fontSize: '14px'
+                  }}
                 />
               </div>
             </div>
 
-            <PresetButtons.Execute
-              onClick={handleCalculateRestoration}
-              disabled={!file || loading}
-              loading={loading}
-              label="復元波形計算実行"
-            />
+            {/* 計算実行ボタン */}
+            {(state.originalData.cutData || state.originalData.mttData) ? (
+              <div style={{ textAlign: 'center' }}>
+                <StandardButton
+                  onClick={handleCalculateRestorationFromGlobal}
+                  disabled={loading}
+                  loading={loading}
+                  label="復元波形を計算"
+                  type="success"
+                  icon="📊"
+                  style={{
+                    fontSize: '18px',
+                    padding: '14px 32px',
+                    fontWeight: 'bold',
+                    background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+                    border: 'none',
+                    boxShadow: '0 4px 15px rgba(102, 126, 234, 0.4)'
+                  }}
+                />
+              </div>
+            ) : (
+              <div style={{
+                border: '2px dashed #d1d5db',
+                borderRadius: '8px',
+                padding: '24px',
+                textAlign: 'center',
+                background: '#f9fafb'
+              }}>
+                <p style={{ marginBottom: '16px', color: '#6b7280' }}>
+                  キヤデータが読み込まれていません。手動でファイルをアップロードしてください。
+                </p>
+                <input
+                  type="file"
+                  accept=".csv"
+                  onChange={(e) => setFile(e.target.files?.[0] || null)}
+                  style={{ marginBottom: '16px' }}
+                />
+                <br />
+                <PresetButtons.Execute
+                  onClick={handleCalculateRestoration}
+                  disabled={!file || loading}
+                  loading={loading}
+                  label="アップロードファイルで計算"
+                />
+              </div>
+            )}
           </div>
-        )}
+        ) : (
+          /* 計算完了後の画面 */
+          <div>
+            {/* 計算完了通知 */}
+            <div style={{
+              background: 'white',
+              borderRadius: '12px',
+              padding: '24px',
+              marginBottom: '24px',
+              boxShadow: '0 10px 40px rgba(0, 0, 0, 0.1)'
+            }}>
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                <div>
+                  <h3 style={{ margin: '0 0 12px 0', color: '#065f46', fontSize: '24px' }}>
+                    ✓ 復元波形計算完了
+                  </h3>
+                  <p style={{ margin: 0, fontSize: '16px', color: '#065f46' }}>
+                    復元波形の計算が正常に完了しました
+                  </p>
+                </div>
+                <StandardButton
+                  onClick={handleReset}
+                  label="やり直す"
+                  type="danger"
+                  icon="🔄"
+                />
+              </div>
+            </div>
 
-        {/* ステップ2: 計画線編集と移動量計算 */}
-        {restorationResult && (
-          <>
-            {/* 統計情報サマリー */}
+            {/* 統計情報表示 */}
             <div style={{
               display: 'grid',
               gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))',
@@ -474,330 +375,90 @@ export const RestorationWorkspacePage: React.FC = () => {
                 background: 'white',
                 borderRadius: '12px',
                 padding: '20px',
-                border: '2px solid #3b82f6'
+                textAlign: 'center',
+                boxShadow: '0 4px 6px rgba(0, 0, 0, 0.07)'
               }}>
-                <div style={{ fontSize: '13px', color: '#6b7280', marginBottom: '4px' }}>復元後σ値</div>
-                <div style={{ fontSize: '28px', fontWeight: 700, color: '#3b82f6' }}>
-                  {restorationResult.statistics.sigma.toFixed(3)} mm
+                <div style={{ fontSize: '14px', color: '#6b7280', marginBottom: '8px' }}>データ点数</div>
+                <div style={{ fontSize: '32px', fontWeight: 700, color: '#3b82f6' }}>
+                  {restorationResult?.restoredWaveform?.length || 0}
                 </div>
               </div>
 
-              {movementResult && (
-                <>
-                  <div style={{
-                    background: 'white',
-                    borderRadius: '12px',
-                    padding: '20px',
-                    border: '2px solid #f59e0b'
-                  }}>
-                    <div style={{ fontSize: '13px', color: '#6b7280', marginBottom: '4px' }}>移動量σ値</div>
-                    <div style={{ fontSize: '28px', fontWeight: 700, color: '#f59e0b' }}>
-                      {movementResult.statistics.movement.sigma.toFixed(3)} mm
-                    </div>
-                  </div>
-
-                  <div style={{
-                    background: 'white',
-                    borderRadius: '12px',
-                    padding: '20px',
-                    border: '2px solid #10b981'
-                  }}>
-                    <div style={{ fontSize: '13px', color: '#6b7280', marginBottom: '4px' }}>整正後予測σ値</div>
-                    <div style={{ fontSize: '28px', fontWeight: 700, color: '#10b981' }}>
-                      {movementResult.statistics.predicted.sigma.toFixed(3)} mm
-                    </div>
-                  </div>
-
-                  <div style={{
-                    background: 'white',
-                    borderRadius: '12px',
-                    padding: '20px',
-                    border: '2px solid #8b5cf6'
-                  }}>
-                    <div style={{ fontSize: '13px', color: '#6b7280', marginBottom: '4px' }}>良化率</div>
-                    <div style={{ fontSize: '28px', fontWeight: 700, color: '#8b5cf6' }}>
-                      {movementResult.improvementRate.toFixed(1)} %
-                    </div>
-                  </div>
-                </>
-              )}
-            </div>
-
-            {/* 曲線諸元から計画線を自動生成 */}
-            {curveSpecs.length > 0 && (
               <div style={{
                 background: 'white',
                 borderRadius: '12px',
                 padding: '20px',
-                marginBottom: '24px',
-                border: '2px solid #10b981'
+                textAlign: 'center',
+                boxShadow: '0 4px 6px rgba(0, 0, 0, 0.07)'
               }}>
-                <h4 style={{ margin: '0 0 16px 0', color: '#065f46' }}>曲線諸元から計画線を自動生成</h4>
-                <p style={{ fontSize: '14px', color: '#6b7280', marginBottom: '16px' }}>
-                  読み込んだ曲線諸元データ（{curveSpecSummary?.totalCurves || curveSpecs.length}区間）に基づいて、
-                  直線区間・緩和曲線・円曲線に応じた計画線を自動的に生成します。
-                </p>
-                <StandardButton
-                  onClick={handleAutoGeneratePlanFromCurves}
-                  disabled={loading}
-                  loading={loading}
-                  label="曲線諸元から計画線を自動生成"
-                  icon="✨"
-                  type="success"
-                />
-              </div>
-            )}
-
-            {/* 計画線編集エディタ */}
-            <InteractivePlanLineEditor
-              restoredWaveform={restorationResult.restoredWaveform}
-              initialPlanLine={planLine || undefined}
-              onPlanLineChange={handlePlanLineChange}
-            />
-
-            {/* 波形チャート */}
-            <div style={{ marginTop: '24px' }}>
-              <h3 style={{ margin: '0 0 16px 0', color: '#374151' }}>波形・移動量チャート</h3>
-              <WaveformChart
-                restoredWaveform={restorationResult.restoredWaveform}
-                planLine={planLine || undefined}
-                movement={movementResult?.movement}
-                dataInterval={0.25}
-                startKP={0}
-                showBrush={true}
-                height={450}
-                standardLimit={30}
-                maximumLimit={50}
-                curveSpecifications={useCurveSpecs && curveSpecs.length > 0 ? curveSpecs : undefined}
-              />
-            </div>
-
-            {/* 曲線区間ごとの統計分析 */}
-            {curveSpecs.length > 0 && (
-              <div style={{
-                background: 'white',
-                borderRadius: '12px',
-                padding: '20px',
-                marginTop: '24px',
-                border: '2px solid #3b82f6'
-              }}>
-                <h4 style={{ margin: '0 0 16px 0', color: '#1e40af' }}>曲線区間ごとの統計分析</h4>
-                <p style={{ fontSize: '14px', color: '#6b7280', marginBottom: '16px' }}>
-                  各曲線区間（直線・緩和曲線・円曲線）ごとに復元波形と移動量の統計値を分析します。
-                </p>
-                <PresetButtons.Calculate
-                  onClick={handleCalculateCurveSectionStats}
-                  disabled={loading || !restorationResult}
-                  loading={loading}
-                  label="曲線区間統計を計算"
-                  style={{ marginBottom: curveSectionStats ? '20px' : '0' }}
-                />
-
-                {/* 統計結果表示 */}
-                {curveSectionStats && (
-                  <div>
-                    <div style={{
-                      background: '#f9fafb',
-                      padding: '16px',
-                      borderRadius: '8px',
-                      marginBottom: '16px'
-                    }}>
-                      <div style={{ fontWeight: 600, marginBottom: '8px', color: '#374151' }}>全体サマリー</div>
-                      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '12px', fontSize: '13px' }}>
-                        <div>
-                          <span style={{ color: '#6b7280' }}>総区間数: </span>
-                          <strong>{curveSectionStats.overallStats.totalSections}</strong>
-                        </div>
-                        <div>
-                          <span style={{ color: '#6b7280' }}>直線: </span>
-                          <strong>{curveSectionStats.overallStats.straightSections}</strong>
-                        </div>
-                        <div>
-                          <span style={{ color: '#6b7280' }}>緩和曲線: </span>
-                          <strong>{curveSectionStats.overallStats.transitionSections}</strong>
-                        </div>
-                        <div>
-                          <span style={{ color: '#6b7280' }}>円曲線: </span>
-                          <strong>{curveSectionStats.overallStats.circularSections}</strong>
-                        </div>
-                      </div>
-                    </div>
-
-                    <div style={{ maxHeight: '400px', overflowY: 'auto' }}>
-                      <table style={{ width: '100%', fontSize: '12px', borderCollapse: 'collapse' }}>
-                        <thead style={{ background: '#f3f4f6', position: 'sticky', top: 0 }}>
-                          <tr>
-                            <th style={{ padding: '10px', textAlign: 'left', borderBottom: '2px solid #e5e7eb' }}>区間</th>
-                            <th style={{ padding: '10px', textAlign: 'left', borderBottom: '2px solid #e5e7eb' }}>種別</th>
-                            <th style={{ padding: '10px', textAlign: 'center', borderBottom: '2px solid #e5e7eb' }}>データ点数</th>
-                            <th colSpan={4} style={{ padding: '10px', textAlign: 'center', borderBottom: '2px solid #e5e7eb', background: '#dbeafe' }}>復元波形 (mm)</th>
-                            {movementResult && (
-                              <th colSpan={4} style={{ padding: '10px', textAlign: 'center', borderBottom: '2px solid #e5e7eb', background: '#fef3c7' }}>移動量 (mm)</th>
-                            )}
-                          </tr>
-                          <tr style={{ fontSize: '11px', color: '#6b7280' }}>
-                            <th style={{ padding: '6px', borderBottom: '1px solid #e5e7eb' }}></th>
-                            <th style={{ padding: '6px', borderBottom: '1px solid #e5e7eb' }}></th>
-                            <th style={{ padding: '6px', borderBottom: '1px solid #e5e7eb' }}></th>
-                            <th style={{ padding: '6px', textAlign: 'right', borderBottom: '1px solid #e5e7eb' }}>最小</th>
-                            <th style={{ padding: '6px', textAlign: 'right', borderBottom: '1px solid #e5e7eb' }}>最大</th>
-                            <th style={{ padding: '6px', textAlign: 'right', borderBottom: '1px solid #e5e7eb' }}>平均</th>
-                            <th style={{ padding: '6px', textAlign: 'right', borderBottom: '1px solid #e5e7eb' }}>σ</th>
-                            {movementResult && (
-                              <>
-                                <th style={{ padding: '6px', textAlign: 'right', borderBottom: '1px solid #e5e7eb' }}>最小</th>
-                                <th style={{ padding: '6px', textAlign: 'right', borderBottom: '1px solid #e5e7eb' }}>最大</th>
-                                <th style={{ padding: '6px', textAlign: 'right', borderBottom: '1px solid #e5e7eb' }}>平均</th>
-                                <th style={{ padding: '6px', textAlign: 'right', borderBottom: '1px solid #e5e7eb' }}>σ</th>
-                              </>
-                            )}
-                          </tr>
-                        </thead>
-                        <tbody>
-                          {curveSectionStats.sectionStatistics.map((section: any, index: number) => {
-                            const curveTypeLabels = {
-                              straight: '直線',
-                              transition: '緩和曲線',
-                              circular: '円曲線'
-                            };
-                            const curveTypeColors = {
-                              straight: '#e0f2fe',
-                              transition: '#fef3c7',
-                              circular: '#fee2e2'
-                            };
-
-                            return (
-                              <tr key={index} style={{ borderBottom: '1px solid #f3f4f6' }}>
-                                <td style={{ padding: '8px' }}>
-                                  {section.curve.startKP.toFixed(3)} - {section.curve.endKP.toFixed(3)} km
-                                </td>
-                                <td style={{ padding: '8px' }}>
-                                  <span style={{
-                                    padding: '3px 8px',
-                                    background: curveTypeColors[section.curve.curveType as keyof typeof curveTypeColors],
-                                    borderRadius: '4px',
-                                    fontSize: '11px'
-                                  }}>
-                                    {curveTypeLabels[section.curve.curveType as keyof typeof curveTypeLabels]}
-                                  </span>
-                                </td>
-                                <td style={{ padding: '8px', textAlign: 'center' }}>{section.dataPoints}</td>
-                                <td style={{ padding: '8px', textAlign: 'right' }}>{section.restoredWaveform.min.toFixed(2)}</td>
-                                <td style={{ padding: '8px', textAlign: 'right' }}>{section.restoredWaveform.max.toFixed(2)}</td>
-                                <td style={{ padding: '8px', textAlign: 'right' }}>{section.restoredWaveform.mean.toFixed(2)}</td>
-                                <td style={{ padding: '8px', textAlign: 'right', fontWeight: 600 }}>{section.restoredWaveform.sigma.toFixed(2)}</td>
-                                {movementResult && section.movement && (
-                                  <>
-                                    <td style={{ padding: '8px', textAlign: 'right' }}>{section.movement.min.toFixed(2)}</td>
-                                    <td style={{ padding: '8px', textAlign: 'right' }}>{section.movement.max.toFixed(2)}</td>
-                                    <td style={{ padding: '8px', textAlign: 'right' }}>{section.movement.mean.toFixed(2)}</td>
-                                    <td style={{ padding: '8px', textAlign: 'right', fontWeight: 600 }}>{section.movement.sigma.toFixed(2)}</td>
-                                  </>
-                                )}
-                              </tr>
-                            );
-                          })}
-                        </tbody>
-                      </table>
-                    </div>
-                  </div>
-                )}
-              </div>
-            )}
-
-            {/* 移動量制限超過情報 */}
-            {movementResult?.violations && (
-              <div style={{
-                background: 'white',
-                borderRadius: '12px',
-                padding: '20px',
-                marginTop: '24px'
-              }}>
-                <h4 style={{ margin: '0 0 16px 0', color: '#374151' }}>移動量制限チェック結果</h4>
-
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
-                  <div style={{
-                    padding: '16px',
-                    background: '#fef3c7',
-                    borderRadius: '8px',
-                    border: '1px solid #f59e0b'
-                  }}>
-                    <div style={{ fontWeight: 600, color: '#92400e', marginBottom: '8px' }}>
-                      標準値超過 (30mm超)
-                    </div>
-                    <div style={{ fontSize: '24px', fontWeight: 700, color: '#f59e0b' }}>
-                      {movementResult.violations.standardExceeded.length} 箇所
-                    </div>
-                  </div>
-
-                  <div style={{
-                    padding: '16px',
-                    background: '#fee2e2',
-                    borderRadius: '8px',
-                    border: '1px solid #ef4444'
-                  }}>
-                    <div style={{ fontWeight: 600, color: '#991b1b', marginBottom: '8px' }}>
-                      最大値超過 (50mm超)
-                    </div>
-                    <div style={{ fontSize: '24px', fontWeight: 700, color: '#ef4444' }}>
-                      {movementResult.violations.maximumExceeded.length} 箇所
-                    </div>
-                  </div>
+                <div style={{ fontSize: '14px', color: '#6b7280', marginBottom: '8px' }}>平均値</div>
+                <div style={{ fontSize: '32px', fontWeight: 700, color: '#10b981' }}>
+                  {restorationResult?.statistics?.mean?.toFixed(3) || '0.000'} mm
                 </div>
               </div>
-            )}
 
-            {/* レポート生成セクション */}
+              <div style={{
+                background: 'white',
+                borderRadius: '12px',
+                padding: '20px',
+                textAlign: 'center',
+                boxShadow: '0 4px 6px rgba(0, 0, 0, 0.07)'
+              }}>
+                <div style={{ fontSize: '14px', color: '#6b7280', marginBottom: '8px' }}>σ値</div>
+                <div style={{ fontSize: '32px', fontWeight: 700, color: '#f59e0b' }}>
+                  {restorationResult?.statistics?.sigma?.toFixed(3) || '0.000'} mm
+                </div>
+              </div>
+
+              <div style={{
+                background: 'white',
+                borderRadius: '12px',
+                padding: '20px',
+                textAlign: 'center',
+                boxShadow: '0 4px 6px rgba(0, 0, 0, 0.07)'
+              }}>
+                <div style={{ fontSize: '14px', color: '#6b7280', marginBottom: '8px' }}>RMS値</div>
+                <div style={{ fontSize: '32px', fontWeight: 700, color: '#8b5cf6' }}>
+                  {restorationResult?.statistics?.rms?.toFixed(3) || '0.000'} mm
+                </div>
+              </div>
+            </div>
+
+            {/* フィルタ情報 */}
             <div style={{
               background: 'white',
               borderRadius: '12px',
-              padding: '20px',
-              marginTop: '24px',
-              border: '2px solid #8b5cf6'
+              padding: '24px',
+              marginBottom: '24px',
+              boxShadow: '0 4px 6px rgba(0, 0, 0, 0.07)'
             }}>
-              <h4 style={{ margin: '0 0 16px 0', color: '#6b21a8' }}>レポート生成</h4>
-              <p style={{ fontSize: '14px', color: '#6b7280', marginBottom: '16px' }}>
-                復元波形、計画線、移動量、曲線諸元データをCSV形式でエクスポートします。
-              </p>
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '12px' }}>
-                <StandardButton
-                  onClick={() => handleGenerateCurveReport('comprehensive')}
-                  disabled={loading}
-                  label="総合レポート"
-                  icon="📊"
-                  type="info"
-                />
-                <StandardButton
-                  onClick={() => handleGenerateCurveReport('curve-sections')}
-                  disabled={loading || curveSpecs.length === 0}
-                  label="曲線区間統計"
-                  icon="📈"
-                  type="info"
-                />
-                <StandardButton
-                  onClick={() => handleGenerateCurveReport('detailed-data')}
-                  disabled={loading}
-                  label="詳細データ"
-                  icon="📋"
-                  type="primary"
-                />
+              <h4 style={{ margin: '0 0 16px 0', color: '#374151' }}>フィルタパラメータ</h4>
+              <div style={{
+                display: 'grid',
+                gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))',
+                gap: '16px',
+                fontSize: '14px'
+              }}>
+                <div>
+                  <span style={{ color: '#6b7280' }}>データタイプ: </span>
+                  <strong>{restorationResult?.filterInfo?.dataType || dataType}</strong>
+                </div>
+                <div>
+                  <span style={{ color: '#6b7280' }}>波長下限: </span>
+                  <strong>{restorationResult?.filterInfo?.lambdaLower || lambdaLower} m</strong>
+                </div>
+                <div>
+                  <span style={{ color: '#6b7280' }}>波長上限: </span>
+                  <strong>{restorationResult?.filterInfo?.lambdaUpper || lambdaUpper} m</strong>
+                </div>
+                <div>
+                  <span style={{ color: '#6b7280' }}>データ間隔: </span>
+                  <strong>{restorationResult?.filterInfo?.dataInterval || 0.25} m</strong>
+                </div>
               </div>
             </div>
 
-            {/* リセットボタン */}
-            <div style={{ marginTop: '24px', textAlign: 'center' }}>
-              <PresetButtons.Reset
-                onClick={() => {
-                  setRestorationResult(null);
-                  setPlanLine(null);
-                  setMovementResult(null);
-                  setFile(null);
-                  setCurveSectionStats(null);
-                }}
-                label="新しいデータで再計算"
-              />
-            </div>
-          </>
+          </div>
         )}
       </div>
     </div>

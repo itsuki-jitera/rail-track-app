@@ -151,7 +151,7 @@ export const DraggableLineChart: React.FC<DraggableLineChartProps> = ({
         pointHoverRadius: 10,
         pointBorderWidth: 2,
         pointBorderColor: '#fff',
-        tension: 0.3,
+        tension: 0,  // 直線で結ぶ（スムーズな曲線を無効化）
         yAxisID: 'y'
       },
       {
@@ -165,7 +165,7 @@ export const DraggableLineChart: React.FC<DraggableLineChartProps> = ({
         pointHoverRadius: 10,
         pointBorderWidth: 2,
         pointBorderColor: '#fff',
-        tension: 0.3,
+        tension: 0,  // 直線で結ぶ（スムーズな曲線を無効化）
         yAxisID: 'y1'
       }
     ]
@@ -194,6 +194,42 @@ export const DraggableLineChart: React.FC<DraggableLineChartProps> = ({
       } as any
     );
   }
+
+  // 固定スケール設定（編集時に軸が動かないように）
+  const getFixedScale = (values: number[], dataType: 'level' | 'alignment') => {
+    if (values.length === 0) {
+      return dataType === 'level' ? { min: -30, max: 30 } : { min: -20, max: 20 };
+    }
+
+    const minValue = Math.min(...values);
+    const maxValue = Math.max(...values);
+
+    // データ範囲に基づいて適切な固定範囲を設定
+    // ただし、編集中でも変わらないように余裕を持たせる
+    if (dataType === 'alignment') {
+      // 通り狂い：最小でも±10mm表示
+      if (maxValue < 5 && minValue > -5) {
+        return { min: -10, max: 10 };  // 小さい値なら±10mm固定
+      } else {
+        // データ範囲+50%マージンで固定
+        const margin = Math.max(10, Math.abs(maxValue - minValue) * 0.5);
+        return { min: minValue - margin, max: maxValue + margin };
+      }
+    } else {
+      // 高低狂い：最小でも±10mm表示
+      if (maxValue < 5 && minValue > -5) {
+        return { min: -10, max: 10 };  // 小さい値なら±10mm固定
+      } else {
+        // データ範囲+50%マージンで固定
+        const margin = Math.max(10, Math.abs(maxValue - minValue) * 0.5);
+        return { min: minValue - margin, max: maxValue + margin };
+      }
+    }
+  };
+
+  // 初回のみスケールを計算（その後は固定）
+  const [levelScale] = useState(() => getFixedScale(data.map(p => p.targetLevel), 'level'));
+  const [alignmentScale] = useState(() => getFixedScale(data.map(p => p.targetAlignment), 'alignment'));
 
   // グラフオプション
   const options: ChartOptions<'line'> = {
@@ -267,8 +303,11 @@ export const DraggableLineChart: React.FC<DraggableLineChartProps> = ({
             size: 14
           }
         },
-        min: -30,
-        max: 30,
+        min: levelScale.min,
+        max: levelScale.max,
+        ticks: {
+          stepSize: Math.abs(levelScale.max - levelScale.min) > 20 ? 5 : 2
+        },
         grid: {
           display: showGrid,
           color: 'rgba(0, 0, 0, 0.05)'
@@ -286,8 +325,11 @@ export const DraggableLineChart: React.FC<DraggableLineChartProps> = ({
             size: 14
           }
         },
-        min: -20,
-        max: 20,
+        min: alignmentScale.min,
+        max: alignmentScale.max,
+        ticks: {
+          stepSize: Math.abs(alignmentScale.max - alignmentScale.min) > 15 ? 5 : 2
+        },
         grid: {
           drawOnChartArea: false
         }
