@@ -5,6 +5,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { PresetButtons } from '../components/StandardButton';
+import MTTGuidancePanel from '../components/MTTGuidancePanel';
 import './PageStyles.css';
 
 interface MTTType {
@@ -25,6 +26,9 @@ export const MTTSettingsPage: React.FC = () => {
     liningCorrection: true,
     correctionRate: 1.0
   });
+
+  // MTT誘導パネルの表示制御
+  const [showGuidancePanel, setShowGuidancePanel] = useState(false);
 
   useEffect(() => {
     fetchMTTTypes();
@@ -199,7 +203,51 @@ export const MTTSettingsPage: React.FC = () => {
             </div>
           </div>
         </div>
+
+        {/* MTT誘導補正パネル（新機能） */}
+        <div className="card">
+          <div className="card-header">
+            <h2>🎯 MTT誘導補正システム</h2>
+          </div>
+          <div className="card-body">
+            <div className="info-box" style={{ marginBottom: '20px' }}>
+              <p>MTT機械の誘導補正パラメータを詳細に設定し、フロント位置の最適化を行います。</p>
+              <p>エネルギー最小化、ピーク最小化、RMS最小化の3つの手法から選択できます。</p>
+            </div>
+            <div style={{ textAlign: 'center' }}>
+              <button
+                onClick={() => setShowGuidancePanel(!showGuidancePanel)}
+                style={{
+                  padding: '12px 24px',
+                  backgroundColor: showGuidancePanel ? '#f44336' : '#2196F3',
+                  color: 'white',
+                  border: 'none',
+                  borderRadius: '8px',
+                  cursor: 'pointer',
+                  fontSize: '16px',
+                  fontWeight: '600',
+                  transition: 'all 0.3s ease',
+                  boxShadow: '0 2px 4px rgba(0, 0, 0, 0.1)'
+                }}
+              >
+                {showGuidancePanel ? '❌ MTT誘導パネルを閉じる' : '🚀 MTT誘導パネルを開く'}
+              </button>
+            </div>
+          </div>
+        </div>
       </div>
+
+      {/* MTTGuidancePanelコンポーネント */}
+      {showGuidancePanel && (
+        <div style={{ margin: '20px auto', maxWidth: '1200px' }}>
+          <MTTGuidancePanel
+            onCorrectionsUpdate={(result) => {
+              console.log('MTT誘導補正結果:', result);
+              alert(`MTT補正完了: 作業効率 ${result.workEfficiency.toFixed(1)}%`);
+            }}
+          />
+        </div>
+      )}
 
       <div className="action-buttons">
         <PresetButtons.Save onClick={handleSave} />

@@ -6,6 +6,7 @@
 
 import React, { useState } from 'react';
 import { StandardButton, PresetButtons } from '../components/StandardButton';
+import WavelengthSettings from '../components/WavelengthSettings';
 import './PageStyles.css';
 
 interface WavebandResult {
@@ -19,6 +20,7 @@ interface WavebandResult {
 export const WavebandAnalysisPage: React.FC = () => {
   const [analyzing, setAnalyzing] = useState(false);
   const [results, setResults] = useState<WavebandResult[]>([]);
+  const [showWavelengthSettings, setShowWavelengthSettings] = useState(false);
   const [settings, setSettings] = useState({
     wavebands: {
       short: { min: 1, max: 5, enabled: true },
@@ -187,6 +189,46 @@ export const WavebandAnalysisPage: React.FC = () => {
                 </label>
               </div>
             </div>
+
+            {/* 動的波長範囲設定 */}
+            <div style={{ marginTop: '20px', marginBottom: '20px', textAlign: 'center' }}>
+              <button
+                onClick={() => setShowWavelengthSettings(!showWavelengthSettings)}
+                style={{
+                  padding: '8px 16px',
+                  backgroundColor: showWavelengthSettings ? '#ef4444' : '#10b981',
+                  color: 'white',
+                  border: 'none',
+                  borderRadius: '6px',
+                  cursor: 'pointer',
+                  fontSize: '14px',
+                  fontWeight: '500',
+                  transition: 'all 0.2s ease'
+                }}
+              >
+                {showWavelengthSettings ? '✕ 動的波長設定を閉じる' : '⚙️ 動的波長設定を開く'}
+              </button>
+            </div>
+
+            {showWavelengthSettings && (
+              <div style={{ marginTop: '20px' }}>
+                <WavelengthSettings
+                  onRangeUpdate={(range) => {
+                    console.log('波長範囲が更新されました:', range);
+                    // 波長範囲に基づいて波長帯設定を自動調整
+                    setSettings(prev => ({
+                      ...prev,
+                      wavebands: {
+                        short: { ...prev.wavebands.short, min: 1, max: Math.min(5, range.upper) },
+                        medium: { ...prev.wavebands.medium, min: 5, max: Math.min(25, range.upper) },
+                        long: { ...prev.wavebands.long, min: 25, max: Math.min(70, range.upper) },
+                        veryLong: { ...prev.wavebands.veryLong, min: 70, max: range.upper }
+                      }
+                    }));
+                  }}
+                />
+              </div>
+            )}
 
             <div className="action-buttons">
               <PresetButtons.Calculate

@@ -4,7 +4,10 @@
  */
 
 // 環境変数からAPI URLを取得（Viteの環境変数はimport.meta.envから取得）
-const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:3003';
+// プロダクション環境では相対パスを使用（Netlifyのプロキシ経由）
+// 開発環境ではローカルAPIサーバーを使用
+export const API_BASE_URL = import.meta.env.VITE_API_URL ||
+  (import.meta.env.PROD ? '' : 'http://localhost:3003');
 
 // API設定オブジェクト
 export const apiConfig = {

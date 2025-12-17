@@ -1,5 +1,23 @@
 # Netlify デプロイガイド
 
+## 🚨 現在の問題と解決策
+
+### 問題
+Netlifyにデプロイされたアプリがローカルホスト（localhost:3003）のAPIに接続しようとしてエラーが発生しています。
+
+### 実施した修正
+1. **API設定の更新** (`src/config/api.ts`)
+   - 本番環境では相対パスを使用するよう修正
+   - 開発環境ではlocalhostを使用
+
+2. **環境変数ファイルの作成**
+   - `.env.production`: 本番環境用（空のVITE_API_URL）
+   - `.env.development`: 開発環境用（localhost:3003）
+
+3. **Netlify Function追加** (`netlify/functions/api.js`)
+   - 基本的なプロキシ機能
+   - エラーハンドリング
+
 ## 📌 重要な確認事項
 
 本アプリケーションは以下の2つの部分で構成されています：

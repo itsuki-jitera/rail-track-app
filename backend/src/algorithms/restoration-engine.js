@@ -12,6 +12,7 @@
 
 const { InverseFilter } = require('./inverse-filter');
 const { VersineConverter } = require('./versine-converter');
+const PlanLineZeroPointSystem = require('./plan-line-zero-point');
 
 class RestorationEngine {
   constructor(options = {}) {
@@ -28,6 +29,15 @@ class RestorationEngine {
     this.versineConverter = new VersineConverter(
       options.samplingInterval || 0.25
     );
+
+    // 計画線ゼロ点システム
+    this.planLineZeroPointSystem = new PlanLineZeroPointSystem({
+      samplingInterval: options.samplingInterval || 0.25,
+      interpolationMethod: options.planLineInterpolation || 'spline'
+    });
+
+    // 計画線計算方法の選択
+    this.planLineMethod = options.planLineMethod || 'zero-point'; // 'zero-point' or 'moving-average'
 
     this.samplingInterval = options.samplingInterval || 0.25;
   }
@@ -69,8 +79,10 @@ class RestorationEngine {
         );
       }
 
-      // 6. 計画線の計算（移動平均による平滑化）
-      const planLine = this.calculatePlanLine(restoredWaveform);
+      // 6. 計画線の計算（ゼロ点方式または移動平均）
+      const planLine = this.planLineMethod === 'zero-point'
+        ? this.calculateZeroPointPlanLine(restoredWaveform, options.restrictions)
+        : this.calculatePlanLine(restoredWaveform);
 
       // 7. 移動量データの計算
       const movementData = this.calculateMovementData(restoredWaveform, planLine);
@@ -116,6 +128,46 @@ class RestorationEngine {
 
     const rate = ((sigmaOriginal - sigmaRestored) / sigmaOriginal) * 100;
     return parseFloat(rate.toFixed(2));
+  }
+
+  /**
+   * ゼロ点方式による計画線を計算
+   * @param {MeasurementData[]} restoredWaveform - 復元波形
+   * @param {Object} restrictions - 移動量制限
+   * @returns {MeasurementData[]} 計画線データ
+   */
+  calculateZeroPointPlanLine(restoredWaveform, restrictions = {}) {
+    try {
+      // ゼロクロス点の検出
+      const zeroCrossPoints = this.planLineZeroPointSystem.detectZeroCrossPoints(restoredWaveform);
+
+      // 初期計画線の生成
+      const initialPlanLine = this.planLineZeroPointSystem.generateInitialPlanLine(
+        zeroCrossPoints,
+        restoredWaveform
+      );
+
+      // 移動量制限による調整
+      const adjustedPlanLine = this.planLineZeroPointSystem.adjustPlanLineWithRestrictions(
+        initialPlanLine,
+        restoredWaveform,
+        restrictions
+      );
+
+      // 品質評価
+      const quality = this.planLineZeroPointSystem.evaluatePlanLineQuality(
+        adjustedPlanLine,
+        restoredWaveform
+      );
+
+      console.log('ゼロ点計画線品質:', quality);
+
+      return adjustedPlanLine;
+    } catch (error) {
+      console.error('ゼロ点計画線計算エラー:', error);
+      console.log('フォールバック: 移動平均方式を使用');
+      return this.calculatePlanLine(restoredWaveform);
+    }
   }
 
   /**

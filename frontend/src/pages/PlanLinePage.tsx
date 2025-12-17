@@ -20,6 +20,8 @@ import { PresetButtons, StandardButton } from '../components/StandardButton';
 import { InteractiveChart } from '../components/InteractiveChart';
 import { AdvancedPlanLineEditor } from '../components/AdvancedPlanLineEditor';
 import { FullscreenPlanLineEditor } from '../components/FullscreenPlanLineEditor';
+import ZeroPointPlanLineEditor from '../components/ZeroPointPlanLineEditor';
+import { EnhancedDragDropPlanLineEditor } from '../components/EnhancedDragDropPlanLineEditor';
 import { useGlobalWorkspace, workspaceSelectors } from '../contexts/GlobalWorkspaceContext';
 import './PageStyles.css';
 
@@ -65,6 +67,9 @@ export const PlanLinePage: React.FC = () => {
   // 計算方法設定
   const [calculationMethod, setCalculationMethod] = useState<'convex' | 'spline' | 'linear'>('convex');
   const [smoothingFactor, setSmoothingFactor] = useState(0.5);
+
+  // エディタ選択
+  const [editorMode, setEditorMode] = useState<'standard' | 'zeroPoint' | 'dragDrop'>('standard');
 
   // グローバル状態から復元波形データを取得して初期化
   useEffect(() => {
@@ -350,13 +355,98 @@ export const PlanLinePage: React.FC = () => {
         </div>
       )}
 
+      {/* エディタモード選択 */}
+      {isReadyForPlanLine && (
+        <div style={{ margin: '20px', display: 'flex', gap: '10px' }}>
+          <button
+            onClick={() => setEditorMode('standard')}
+            style={{
+              padding: '10px 20px',
+              backgroundColor: editorMode === 'standard' ? '#4CAF50' : '#f0f0f0',
+              color: editorMode === 'standard' ? 'white' : 'black',
+              border: '1px solid #ccc',
+              borderRadius: '5px',
+              cursor: 'pointer',
+              fontWeight: editorMode === 'standard' ? 'bold' : 'normal'
+            }}
+          >
+            📊 標準計画線エディタ
+          </button>
+          <button
+            onClick={() => setEditorMode('zeroPoint')}
+            style={{
+              padding: '10px 20px',
+              backgroundColor: editorMode === 'zeroPoint' ? '#4CAF50' : '#f0f0f0',
+              color: editorMode === 'zeroPoint' ? 'white' : 'black',
+              border: '1px solid #ccc',
+              borderRadius: '5px',
+              cursor: 'pointer',
+              fontWeight: editorMode === 'zeroPoint' ? 'bold' : 'normal'
+            }}
+          >
+            🎯 ゼロ点計画線エディタ（新機能）
+          </button>
+          <button
+            onClick={() => setEditorMode('dragDrop')}
+            style={{
+              padding: '10px 20px',
+              backgroundColor: editorMode === 'dragDrop' ? '#4CAF50' : '#f0f0f0',
+              color: editorMode === 'dragDrop' ? 'white' : 'black',
+              border: '1px solid #ccc',
+              borderRadius: '5px',
+              cursor: 'pointer',
+              fontWeight: editorMode === 'dragDrop' ? 'bold' : 'normal'
+            }}
+          >
+            🖱️ ドラッグ&ドロップ計画線エディタ（P22準拠）
+          </button>
+        </div>
+      )}
+
       {/* フルスクリーン統合型エディタ（データがある場合のみ表示） */}
       <div style={{ height: 'calc(100vh - 200px)', margin: '20px 0' }}>
         {isReadyForPlanLine && planPoints.length > 0 ? (
-          <FullscreenPlanLineEditor
-            initialData={planPoints}
-            onSave={handleEditorSave}
-          />
+          editorMode === 'standard' ? (
+            <FullscreenPlanLineEditor
+              initialData={planPoints}
+              onSave={handleEditorSave}
+            />
+          ) : editorMode === 'zeroPoint' ? (
+            <ZeroPointPlanLineEditor
+              restoredWaveform={restoredWaveform?.positions?.map((pos, idx) => ({
+                distance: pos,
+                value: restoredWaveform.level?.[idx] || 0
+              })) || []}
+              onPlanLineUpdate={(newPlanLine) => {
+                const convertedPoints = newPlanLine.map(p => ({
+                  position: p.distance,
+                  targetLevel: p.value,
+                  targetAlignment: 0
+                }));
+                setPlanPoints(convertedPoints);
+                handleEditorSave(convertedPoints);
+              }}
+            />
+          ) : (
+            <EnhancedDragDropPlanLineEditor
+              initialData={{
+                positions: planPoints.map(p => p.position),
+                targetLevel: planPoints.map(p => p.targetLevel),
+                targetAlignment: planPoints.map(p => p.targetAlignment),
+                restoredLevel: restoredWaveform?.level || [],
+                restoredAlignment: restoredWaveform?.alignment || []
+              }}
+              onSave={(updatedData) => {
+                const convertedPoints = updatedData.positions.map((pos, idx) => ({
+                  position: pos,
+                  targetLevel: updatedData.targetLevel[idx],
+                  targetAlignment: updatedData.targetAlignment[idx]
+                }));
+                setPlanPoints(convertedPoints);
+                handleEditorSave(convertedPoints);
+              }}
+            />
+          )
         ) : (
           <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100%', background: '#f8f9fa', borderRadius: '8px' }}>
             <div style={{ textAlign: 'center', color: '#6c757d' }}>

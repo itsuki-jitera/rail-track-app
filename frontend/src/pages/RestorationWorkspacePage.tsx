@@ -3,6 +3,7 @@ import axios from 'axios';
 import { PresetButtons, StandardButton } from '../components/StandardButton';
 import { useGlobalWorkspace } from '../contexts/GlobalWorkspaceContext';
 import { apiConfig } from '../config/api';
+import WavelengthSettings from '../components/WavelengthSettings';
 
 export const RestorationWorkspacePage: React.FC = () => {
   const [file, setFile] = useState<File | null>(null);
@@ -18,6 +19,9 @@ export const RestorationWorkspacePage: React.FC = () => {
 
   // データ保存済みかどうかのフラグ
   const [dataSaved, setDataSaved] = useState(false);
+
+  // 波長設定パネルの表示制御
+  const [showWavelengthSettings, setShowWavelengthSettings] = useState(false);
 
   // 復元波形計算（グローバルデータ使用版）
   const handleCalculateRestorationFromGlobal = async () => {
@@ -287,6 +291,42 @@ export const RestorationWorkspacePage: React.FC = () => {
                 />
               </div>
             </div>
+
+            {/* 波長設定の高度なオプション */}
+            <div style={{ marginBottom: '32px', textAlign: 'center' }}>
+              <button
+                onClick={() => setShowWavelengthSettings(!showWavelengthSettings)}
+                style={{
+                  background: showWavelengthSettings ? '#dc2626' : '#3b82f6',
+                  color: 'white',
+                  padding: '10px 20px',
+                  borderRadius: '8px',
+                  border: 'none',
+                  cursor: 'pointer',
+                  fontSize: '14px',
+                  fontWeight: '600',
+                  transition: 'all 0.2s ease',
+                  boxShadow: '0 2px 4px rgba(0, 0, 0, 0.1)'
+                }}
+              >
+                {showWavelengthSettings ? '✕ 高度な波長設定を閉じる' : '⚙️ 高度な波長設定を開く'}
+              </button>
+            </div>
+
+            {/* WavelengthSettingsコンポーネント */}
+            {showWavelengthSettings && (
+              <div style={{ marginBottom: '32px' }}>
+                <WavelengthSettings
+                  initialMaxSpeed={130}
+                  initialTrackType="conventional"
+                  onRangeUpdate={(range) => {
+                    setLambdaLower(range.lower);
+                    setLambdaUpper(range.upper);
+                    console.log('波長範囲更新:', range);
+                  }}
+                />
+              </div>
+            )}
 
             {/* 計算実行ボタン */}
             {(state.originalData.cutData || state.originalData.mttData) ? (

@@ -42,6 +42,7 @@ import { ExportMJPage } from './pages/ExportMJPage'
 import { ExportALCPage } from './pages/ExportALCPage'
 import { ExportGeneralPage } from './pages/ExportGeneralPage'
 import { ReportPage } from './pages/ReportPage'
+import { DashboardPage } from './pages/DashboardPage'
 import { GlobalWorkspaceProvider } from './contexts/GlobalWorkspaceContext'
 
 export interface TrackData {
@@ -479,6 +480,11 @@ function App() {
 
         {/* メインコンテンツエリア */}
         <div className="app-with-sidebar">
+      {/* 統合ダッシュボード */}
+      {currentPage === 'dashboard' && (
+        <DashboardPage />
+      )}
+
       {/* メインワークフロー画面 */}
       {currentPage === 'workflow' && (
         <WorkflowPage />

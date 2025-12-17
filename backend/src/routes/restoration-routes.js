@@ -12,6 +12,8 @@ const { PlanLineEditor } = require('../algorithms/plan-line-editor');
 const { CrossingMethod } = require('../algorithms/crossing-method');
 const { PlanLineRefinement } = require('../algorithms/plan-line-refinement');
 const { VersineConverter } = require('../algorithms/versine-converter');
+const PlanLineZeroPointSystem = require('../algorithms/plan-line-zero-point');
+const CorrelationMatcher = require('../algorithms/correlation-matcher');
 
 // Phase 5: 復元波形計算システム
 const RestorationFilter = require('../algorithms/restoration-filter');
@@ -111,6 +113,156 @@ router.post('/generate-plan-line', async (req, res) => {
     });
   } catch (error) {
     console.error('Plan line generation error:', error);
+    res.status(500).json({
+      success: false,
+      error: error.message
+    });
+  }
+});
+
+/**
+ * ゼロ点計画線計算
+ * POST /api/restoration/zero-point-plan-line
+ */
+router.post('/zero-point-plan-line', async (req, res) => {
+  try {
+    const { restoredWaveform, restrictions = {}, options = {} } = req.body;
+
+    if (!restoredWaveform || !Array.isArray(restoredWaveform)) {
+      return res.status(400).json({
+        success: false,
+        error: 'Restored waveform is required'
+      });
+    }
+
+    console.log(`ゼロ点計画線計算開始: ${restoredWaveform.length}点`);
+
+    const zeroPointSystem = new PlanLineZeroPointSystem(options);
+
+    // ゼロクロス点の検出
+    const zeroCrossPoints = zeroPointSystem.detectZeroCrossPoints(restoredWaveform);
+
+    // 初期計画線の生成
+    const initialPlanLine = zeroPointSystem.generateInitialPlanLine(
+      zeroCrossPoints,
+      restoredWaveform
+    );
+
+    // 移動量制限による調整
+    const adjustedPlanLine = zeroPointSystem.adjustPlanLineWithRestrictions(
+      initialPlanLine,
+      restoredWaveform,
+      restrictions
+    );
+
+    // 品質評価
+    const quality = zeroPointSystem.evaluatePlanLineQuality(
+      adjustedPlanLine,
+      restoredWaveform
+    );
+
+    res.json({
+      success: true,
+      planLine: adjustedPlanLine,
+      zeroCrossPoints,
+      initialPlanLine,
+      quality,
+      statistics: {
+        zeroCrossCount: zeroCrossPoints.length,
+        averageMovement: quality.averageMovement,
+        maxMovement: quality.maxMovement,
+        upwardRatio: quality.upwardRatio,
+        qualityScore: quality.quality
+      }
+    });
+  } catch (error) {
+    console.error('Zero point plan line error:', error);
+    res.status(500).json({
+      success: false,
+      error: error.message
+    });
+  }
+});
+
+/**
+ * 手検測データ相関マッチング
+ * POST /api/restoration/correlation-match
+ */
+router.post('/correlation-match', async (req, res) => {
+  try {
+    const { chartData, fieldData, options = {} } = req.body;
+
+    if (!chartData || !fieldData) {
+      return res.status(400).json({
+        success: false,
+        error: 'Chart data and field data are required'
+      });
+    }
+
+    console.log('相関マッチング開始');
+
+    const matcher = new CorrelationMatcher(options);
+    const result = matcher.findBestMatch(chartData, fieldData, options);
+
+    if (!result.success) {
+      return res.status(500).json(result);
+    }
+
+    res.json({
+      success: true,
+      bestOffset: result.bestOffset,
+      bestCorrelation: result.bestCorrelation,
+      alignedFieldData: result.alignedFieldData,
+      matchPosition: result.matchPosition,
+      quality: result.quality,
+      recommendation: result.recommendation,
+      correlationResults: result.correlationResults
+    });
+  } catch (error) {
+    console.error('Correlation matching error:', error);
+    res.status(500).json({
+      success: false,
+      error: error.message
+    });
+  }
+});
+
+/**
+ * 複数箇所手検測データマッチング
+ * POST /api/restoration/multi-point-match
+ */
+router.post('/multi-point-match', async (req, res) => {
+  try {
+    const { chartData, multipleFieldData, options = {} } = req.body;
+
+    if (!chartData || !multipleFieldData || !Array.isArray(multipleFieldData)) {
+      return res.status(400).json({
+        success: false,
+        error: 'Chart data and multiple field data array are required'
+      });
+    }
+
+    console.log(`複数点マッチング開始: ${multipleFieldData.length}箇所`);
+
+    const matcher = new CorrelationMatcher(options);
+    const result = matcher.multiPointMatching(chartData, multipleFieldData);
+
+    if (!result.success) {
+      return res.status(500).json(result);
+    }
+
+    res.json({
+      success: true,
+      globalOffset: result.globalOffset,
+      matchResults: result.matchResults,
+      residuals: result.residuals,
+      residualStdDev: result.residualStdDev,
+      averageCorrelation: result.averageCorrelation,
+      quality: result.quality,
+      recommendation: result.recommendation
+    });
+  } catch (error) {
+    console.error('Multi-point matching error:', error);
     res.status(500).json({
       success: false,
       error: error.message

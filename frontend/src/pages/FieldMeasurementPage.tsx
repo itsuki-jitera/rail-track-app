@@ -6,6 +6,8 @@
 
 import React, { useState } from 'react';
 import { StandardButton, PresetButtons } from '../components/StandardButton';
+import CorrelationMatcher from '../components/CorrelationMatcher';
+import { useGlobalWorkspace, workspaceSelectors } from '../contexts/GlobalWorkspaceContext';
 import './PageStyles.css';
 
 interface MeasurementPoint {
@@ -20,6 +22,10 @@ interface MeasurementPoint {
 }
 
 export const FieldMeasurementPage: React.FC = () => {
+  // グローバル状態から復元波形データを取得
+  const { state } = useGlobalWorkspace();
+  const restoredWaveform = workspaceSelectors.getRestoredWaveform(state);
+
   const [measurements, setMeasurements] = useState<MeasurementPoint[]>([]);
   const [newPoint, setNewPoint] = useState({
     distance: 0,
@@ -29,6 +35,7 @@ export const FieldMeasurementPage: React.FC = () => {
     gauge: 1067,
     measuredBy: ''
   });
+  const [showCorrelationMatcher, setShowCorrelationMatcher] = useState(false);
 
   const addMeasurement = () => {
     if (!newPoint.distance) {
@@ -276,7 +283,52 @@ export const FieldMeasurementPage: React.FC = () => {
             </div>
           </div>
         </div>
+
+        {/* 相関マッチング機能（新機能） */}
+        {restoredWaveform && restoredWaveform.positions && (
+          <div className="card">
+            <div className="card-header">
+              <h2>🎯 位置合わせ（相関マッチング）</h2>
+            </div>
+            <div className="card-body">
+              <div className="info-box" style={{ marginBottom: '20px' }}>
+                <p>手検測データとチャートデータの相関を計算し、最適な位置合わせを行います。</p>
+                <p>±20m以内の範囲で自動的に最適位置を検出します。</p>
+              </div>
+              <button
+                onClick={() => setShowCorrelationMatcher(!showCorrelationMatcher)}
+                style={{
+                  padding: '10px 20px',
+                  backgroundColor: showCorrelationMatcher ? '#f44336' : '#4CAF50',
+                  color: 'white',
+                  border: 'none',
+                  borderRadius: '5px',
+                  cursor: 'pointer',
+                  fontSize: '16px'
+                }}
+              >
+                {showCorrelationMatcher ? '❌ 相関マッチングを閉じる' : '🔍 相関マッチングを開始'}
+              </button>
+            </div>
+          </div>
+        )}
       </div>
+
+      {/* 相関マッチングコンポーネント */}
+      {showCorrelationMatcher && restoredWaveform && (
+        <div style={{ margin: '20px' }}>
+          <CorrelationMatcher
+            chartData={{
+              positions: restoredWaveform.positions || [],
+              values: restoredWaveform.level || []
+            }}
+            onMatchComplete={(result) => {
+              console.log('マッチング完了:', result);
+              alert(`最適位置: ${result.bestOffset.toFixed(2)}m, 相関係数: ${(result.bestCorrelation * 100).toFixed(1)}%`);
+            }}
+          />
+        </div>
+      )}
 
       <div className="action-buttons">
         <PresetButtons.Save

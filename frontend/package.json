@@ -9,6 +9,11 @@
     "preview": "vite preview"
   },
   "dependencies": {
+    "@emotion/react": "^11.14.0",
+    "@emotion/styled": "^11.14.1",
+    "@mui/icons-material": "^7.3.6",
+    "@mui/material": "^7.3.6",
+    "@mui/x-charts": "^8.22.0",
     "@types/d3": "^7.4.3",
     "@types/react-plotly.js": "^2.6.3",
     "axios": "^1.13.2",

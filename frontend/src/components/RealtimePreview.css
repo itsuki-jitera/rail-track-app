@@ -1,0 +1,258 @@
+/**
+ * リアルタイムプレビューのスタイル
+ * Phase 4 - リアルタイムプレビュー機能
+ */
+
+.realtime-preview {
+  background: white;
+  border-radius: 12px;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.08);
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+}
+
+.preview-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 15px 20px;
+  background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+  border-bottom: 1px solid #e0e4e8;
+}
+
+.preview-header h3 {
+  margin: 0;
+  font-size: 18px;
+  color: #333;
+  font-weight: 600;
+}
+
+.preview-controls {
+  display: flex;
+  gap: 15px;
+  align-items: center;
+}
+
+.btn-reset {
+  padding: 6px 12px;
+  background: white;
+  border: 1px solid #ddd;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 14px;
+  transition: all 0.3s ease;
+  display: flex;
+  align-items: center;
+  gap: 5px;
+}
+
+.btn-reset:hover {
+  background: #f5f5f5;
+  transform: translateY(-1px);
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
+}
+
+.preview-controls label {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 14px;
+  color: #666;
+  cursor: pointer;
+}
+
+.preview-controls input[type="checkbox"] {
+  width: 16px;
+  height: 16px;
+  cursor: pointer;
+}
+
+.preview-canvas-container {
+  flex: 1;
+  position: relative;
+  overflow: hidden;
+  background: #fafafa;
+  min-height: 400px;
+}
+
+.preview-canvas {
+  width: 100%;
+  height: 100%;
+  cursor: crosshair;
+  display: block;
+}
+
+.preview-canvas:active {
+  cursor: move;
+}
+
+.preview-stats {
+  display: flex;
+  gap: 20px;
+  padding: 15px 20px;
+  background: #f8f9fa;
+  border-top: 1px solid #e0e4e8;
+  flex-wrap: wrap;
+}
+
+.stat-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 12px;
+  background: white;
+  border-radius: 6px;
+  border: 1px solid #e0e4e8;
+  transition: all 0.3s ease;
+}
+
+.stat-item:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.stat-item.highlight {
+  background: linear-gradient(135deg, #fff3e0 0%, #ffe0b2 100%);
+  border-color: #ffb74d;
+}
+
+.stat-label {
+  font-size: 13px;
+  color: #666;
+  font-weight: 500;
+}
+
+.stat-value {
+  font-size: 14px;
+  color: #333;
+  font-weight: 600;
+  font-family: 'Monaco', 'Consolas', monospace;
+}
+
+.stat-item.highlight .stat-value {
+  color: #f57c00;
+}
+
+/* アニメーション */
+@keyframes pulse {
+  0%, 100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.7;
+  }
+}
+
+.preview-canvas-container.updating {
+  animation: pulse 0.5s ease;
+}
+
+/* ツールチップのスタイル（Canvas内で描画されるが参考用） */
+.tooltip-style {
+  background: rgba(0, 0, 0, 0.8);
+  color: white;
+  padding: 5px 10px;
+  border-radius: 4px;
+  font-size: 12px;
+  white-space: nowrap;
+  pointer-events: none;
+}
+
+/* レスポンシブ対応 */
+@media (max-width: 768px) {
+  .preview-header {
+    flex-direction: column;
+    gap: 10px;
+    align-items: flex-start;
+  }
+
+  .preview-controls {
+    width: 100%;
+    justify-content: space-between;
+  }
+
+  .preview-stats {
+    gap: 10px;
+    padding: 10px;
+  }
+
+  .stat-item {
+    flex: 1 1 calc(50% - 10px);
+    min-width: 120px;
+  }
+
+  .preview-canvas-container {
+    min-height: 300px;
+  }
+}
+
+/* パフォーマンス最適化 */
+.preview-canvas {
+  image-rendering: auto;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  will-change: transform;
+}
+
+/* ダークモード対応（将来実装用） */
+@media (prefers-color-scheme: dark) {
+  .realtime-preview {
+    background: #1e1e1e;
+    color: #e0e0e0;
+  }
+
+  .preview-header {
+    background: linear-gradient(135deg, #2c2c2c 0%, #3c3c3c 100%);
+    border-bottom-color: #444;
+  }
+
+  .preview-header h3 {
+    color: #e0e0e0;
+  }
+
+  .btn-reset {
+    background: #2c2c2c;
+    border-color: #444;
+    color: #e0e0e0;
+  }
+
+  .btn-reset:hover {
+    background: #3c3c3c;
+  }
+
+  .preview-canvas-container {
+    background: #1a1a1a;
+  }
+
+  .preview-stats {
+    background: #2c2c2c;
+    border-top-color: #444;
+  }
+
+  .stat-item {
+    background: #1e1e1e;
+    border-color: #444;
+  }
+
+  .stat-label {
+    color: #aaa;
+  }
+
+  .stat-value {
+    color: #e0e0e0;
+  }
+}
+
+/* 印刷対応 */
+@media print {
+  .preview-controls {
+    display: none;
+  }
+
+  .realtime-preview {
+    box-shadow: none;
+    border: 1px solid #ddd;
+  }
+}
